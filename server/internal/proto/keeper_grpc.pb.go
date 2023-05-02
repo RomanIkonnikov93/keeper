@@ -20,26 +20,26 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Keeper_AddUser_FullMethodName      = "/keeper.Keeper/AddUser"
-	Keeper_CheckUser_FullMethodName    = "/keeper.Keeper/CheckUser"
-	Keeper_Add_FullMethodName          = "/keeper.Keeper/Add"
-	Keeper_Get_FullMethodName          = "/keeper.Keeper/Get"
-	Keeper_GetAllByType_FullMethodName = "/keeper.Keeper/GetAllByType"
-	Keeper_UpdateByID_FullMethodName   = "/keeper.Keeper/UpdateByID"
-	Keeper_DeleteByID_FullMethodName   = "/keeper.Keeper/DeleteByID"
+	Keeper_RegistrationUser_FullMethodName    = "/keeper.Keeper/RegistrationUser"
+	Keeper_LoginUser_FullMethodName           = "/keeper.Keeper/LoginUser"
+	Keeper_AddRecord_FullMethodName           = "/keeper.Keeper/AddRecord"
+	Keeper_GetRecord_FullMethodName           = "/keeper.Keeper/GetRecord"
+	Keeper_GetAllRecordsByType_FullMethodName = "/keeper.Keeper/GetAllRecordsByType"
+	Keeper_UpdateRecordByID_FullMethodName    = "/keeper.Keeper/UpdateRecordByID"
+	Keeper_DeleteRecordByID_FullMethodName    = "/keeper.Keeper/DeleteRecordByID"
 )
 
 // KeeperClient is the client API for Keeper service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KeeperClient interface {
-	AddUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error)
-	CheckUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error)
-	Add(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Get(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error)
-	GetAllByType(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error)
-	UpdateByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	DeleteByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RegistrationUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error)
+	LoginUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error)
+	AddRecord(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetRecord(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error)
+	GetAllRecordsByType(ctx context.Context, in *Record, opts ...grpc.CallOption) (*List, error)
+	UpdateRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type keeperClient struct {
@@ -50,63 +50,63 @@ func NewKeeperClient(cc grpc.ClientConnInterface) KeeperClient {
 	return &keeperClient{cc}
 }
 
-func (c *keeperClient) AddUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error) {
+func (c *keeperClient) RegistrationUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error) {
 	out := new(Auth)
-	err := c.cc.Invoke(ctx, Keeper_AddUser_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Keeper_RegistrationUser_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *keeperClient) CheckUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error) {
+func (c *keeperClient) LoginUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error) {
 	out := new(Auth)
-	err := c.cc.Invoke(ctx, Keeper_CheckUser_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Keeper_LoginUser_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *keeperClient) Add(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *keeperClient) AddRecord(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, Keeper_Add_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Keeper_AddRecord_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *keeperClient) Get(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error) {
+func (c *keeperClient) GetRecord(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error) {
 	out := new(Record)
-	err := c.cc.Invoke(ctx, Keeper_Get_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Keeper_GetRecord_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *keeperClient) GetAllByType(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error) {
-	out := new(Record)
-	err := c.cc.Invoke(ctx, Keeper_GetAllByType_FullMethodName, in, out, opts...)
+func (c *keeperClient) GetAllRecordsByType(ctx context.Context, in *Record, opts ...grpc.CallOption) (*List, error) {
+	out := new(List)
+	err := c.cc.Invoke(ctx, Keeper_GetAllRecordsByType_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *keeperClient) UpdateByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *keeperClient) UpdateRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, Keeper_UpdateByID_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Keeper_UpdateRecordByID_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *keeperClient) DeleteByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *keeperClient) DeleteRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, Keeper_DeleteByID_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Keeper_DeleteRecordByID_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -117,13 +117,13 @@ func (c *keeperClient) DeleteByID(ctx context.Context, in *Record, opts ...grpc.
 // All implementations must embed UnimplementedKeeperServer
 // for forward compatibility
 type KeeperServer interface {
-	AddUser(context.Context, *Auth) (*Auth, error)
-	CheckUser(context.Context, *Auth) (*Auth, error)
-	Add(context.Context, *Record) (*emptypb.Empty, error)
-	Get(context.Context, *Record) (*Record, error)
-	GetAllByType(context.Context, *Record) (*Record, error)
-	UpdateByID(context.Context, *Record) (*emptypb.Empty, error)
-	DeleteByID(context.Context, *Record) (*emptypb.Empty, error)
+	RegistrationUser(context.Context, *Auth) (*Auth, error)
+	LoginUser(context.Context, *Auth) (*Auth, error)
+	AddRecord(context.Context, *Record) (*emptypb.Empty, error)
+	GetRecord(context.Context, *Record) (*Record, error)
+	GetAllRecordsByType(context.Context, *Record) (*List, error)
+	UpdateRecordByID(context.Context, *Record) (*emptypb.Empty, error)
+	DeleteRecordByID(context.Context, *Record) (*emptypb.Empty, error)
 	mustEmbedUnimplementedKeeperServer()
 }
 
@@ -131,26 +131,26 @@ type KeeperServer interface {
 type UnimplementedKeeperServer struct {
 }
 
-func (UnimplementedKeeperServer) AddUser(context.Context, *Auth) (*Auth, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddUser not implemented")
+func (UnimplementedKeeperServer) RegistrationUser(context.Context, *Auth) (*Auth, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegistrationUser not implemented")
 }
-func (UnimplementedKeeperServer) CheckUser(context.Context, *Auth) (*Auth, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckUser not implemented")
+func (UnimplementedKeeperServer) LoginUser(context.Context, *Auth) (*Auth, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
 }
-func (UnimplementedKeeperServer) Add(context.Context, *Record) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Add not implemented")
+func (UnimplementedKeeperServer) AddRecord(context.Context, *Record) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddRecord not implemented")
 }
-func (UnimplementedKeeperServer) Get(context.Context, *Record) (*Record, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+func (UnimplementedKeeperServer) GetRecord(context.Context, *Record) (*Record, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRecord not implemented")
 }
-func (UnimplementedKeeperServer) GetAllByType(context.Context, *Record) (*Record, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllByType not implemented")
+func (UnimplementedKeeperServer) GetAllRecordsByType(context.Context, *Record) (*List, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllRecordsByType not implemented")
 }
-func (UnimplementedKeeperServer) UpdateByID(context.Context, *Record) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateByID not implemented")
+func (UnimplementedKeeperServer) UpdateRecordByID(context.Context, *Record) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRecordByID not implemented")
 }
-func (UnimplementedKeeperServer) DeleteByID(context.Context, *Record) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteByID not implemented")
+func (UnimplementedKeeperServer) DeleteRecordByID(context.Context, *Record) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecordByID not implemented")
 }
 func (UnimplementedKeeperServer) mustEmbedUnimplementedKeeperServer() {}
 
@@ -165,128 +165,128 @@ func RegisterKeeperServer(s grpc.ServiceRegistrar, srv KeeperServer) {
 	s.RegisterService(&Keeper_ServiceDesc, srv)
 }
 
-func _Keeper_AddUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Keeper_RegistrationUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Auth)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KeeperServer).AddUser(ctx, in)
+		return srv.(KeeperServer).RegistrationUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Keeper_AddUser_FullMethodName,
+		FullMethod: Keeper_RegistrationUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).AddUser(ctx, req.(*Auth))
+		return srv.(KeeperServer).RegistrationUser(ctx, req.(*Auth))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Keeper_CheckUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Keeper_LoginUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Auth)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KeeperServer).CheckUser(ctx, in)
+		return srv.(KeeperServer).LoginUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Keeper_CheckUser_FullMethodName,
+		FullMethod: Keeper_LoginUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).CheckUser(ctx, req.(*Auth))
+		return srv.(KeeperServer).LoginUser(ctx, req.(*Auth))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Keeper_Add_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Keeper_AddRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Record)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KeeperServer).Add(ctx, in)
+		return srv.(KeeperServer).AddRecord(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Keeper_Add_FullMethodName,
+		FullMethod: Keeper_AddRecord_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).Add(ctx, req.(*Record))
+		return srv.(KeeperServer).AddRecord(ctx, req.(*Record))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Keeper_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Keeper_GetRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Record)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KeeperServer).Get(ctx, in)
+		return srv.(KeeperServer).GetRecord(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Keeper_Get_FullMethodName,
+		FullMethod: Keeper_GetRecord_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).Get(ctx, req.(*Record))
+		return srv.(KeeperServer).GetRecord(ctx, req.(*Record))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Keeper_GetAllByType_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Keeper_GetAllRecordsByType_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Record)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KeeperServer).GetAllByType(ctx, in)
+		return srv.(KeeperServer).GetAllRecordsByType(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Keeper_GetAllByType_FullMethodName,
+		FullMethod: Keeper_GetAllRecordsByType_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).GetAllByType(ctx, req.(*Record))
+		return srv.(KeeperServer).GetAllRecordsByType(ctx, req.(*Record))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Keeper_UpdateByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Keeper_UpdateRecordByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Record)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KeeperServer).UpdateByID(ctx, in)
+		return srv.(KeeperServer).UpdateRecordByID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Keeper_UpdateByID_FullMethodName,
+		FullMethod: Keeper_UpdateRecordByID_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).UpdateByID(ctx, req.(*Record))
+		return srv.(KeeperServer).UpdateRecordByID(ctx, req.(*Record))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Keeper_DeleteByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Keeper_DeleteRecordByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Record)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KeeperServer).DeleteByID(ctx, in)
+		return srv.(KeeperServer).DeleteRecordByID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Keeper_DeleteByID_FullMethodName,
+		FullMethod: Keeper_DeleteRecordByID_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).DeleteByID(ctx, req.(*Record))
+		return srv.(KeeperServer).DeleteRecordByID(ctx, req.(*Record))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -299,32 +299,32 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*KeeperServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AddUser",
-			Handler:    _Keeper_AddUser_Handler,
+			MethodName: "RegistrationUser",
+			Handler:    _Keeper_RegistrationUser_Handler,
 		},
 		{
-			MethodName: "CheckUser",
-			Handler:    _Keeper_CheckUser_Handler,
+			MethodName: "LoginUser",
+			Handler:    _Keeper_LoginUser_Handler,
 		},
 		{
-			MethodName: "Add",
-			Handler:    _Keeper_Add_Handler,
+			MethodName: "AddRecord",
+			Handler:    _Keeper_AddRecord_Handler,
 		},
 		{
-			MethodName: "Get",
-			Handler:    _Keeper_Get_Handler,
+			MethodName: "GetRecord",
+			Handler:    _Keeper_GetRecord_Handler,
 		},
 		{
-			MethodName: "GetAllByType",
-			Handler:    _Keeper_GetAllByType_Handler,
+			MethodName: "GetAllRecordsByType",
+			Handler:    _Keeper_GetAllRecordsByType_Handler,
 		},
 		{
-			MethodName: "UpdateByID",
-			Handler:    _Keeper_UpdateByID_Handler,
+			MethodName: "UpdateRecordByID",
+			Handler:    _Keeper_UpdateRecordByID_Handler,
 		},
 		{
-			MethodName: "DeleteByID",
-			Handler:    _Keeper_DeleteByID_Handler,
+			MethodName: "DeleteRecordByID",
+			Handler:    _Keeper_DeleteRecordByID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -9,7 +9,7 @@ import (
 // Reps struct for NewReps.
 type Reps struct {
 	Rep     Repository
-	UserRep IDRepository
+	UserRep UsersRepository
 	Ping    Pinger
 }
 

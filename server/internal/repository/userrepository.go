@@ -11,10 +11,10 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// IDRepository interface for user repository methods.
-type IDRepository interface {
-	AddUser(user string) error
-	CheckUser(user string) (bool, error)
+// UsersRepository interface for user repository methods.
+type UsersRepository interface {
+	AddUser(ctx context.Context, id, login, password string) error
+	CheckUser(ctx context.Context, login, password string) (string, string, error)
 }
 
 // usersIDpg struct for postgresql connection.
@@ -50,12 +50,19 @@ func NewPGIDRepository(pool *pgxpool.Pool) (*usersIDpg, error) {
 }
 
 // AddUser
-func (p *usersIDpg) AddUser(user string) error {
+func (p *usersIDpg) AddUser(ctx context.Context, ID, login, password string) error {
 
-	ctx, cancel := context.WithTimeout(context.Background(), models.TimeOut)
+	c, cancel := context.WithTimeout(ctx, models.TimeOut)
 	defer cancel()
 
-	if _, err := p.pool.Exec(ctx, `insert into users (user_id) values ($1)`, user); err != nil {
+	_, err := p.pool.Exec(c, `insert into keeper_auth (user_id, user_login, user_password) values ($1, $2, $3)`, ID, login, password)
+	if err != nil {
+		pgerr, ok := err.(*pgconn.PgError)
+		if ok {
+			if pgerr.Code == "23505" {
+				return models.ErrConflict
+			}
+		}
 		return err
 	}
 
@@ -63,18 +70,14 @@ func (p *usersIDpg) AddUser(user string) error {
 }
 
 // CheckUser
-func (p *usersIDpg) CheckUser(user string) (bool, error) {
+func (p *usersIDpg) CheckUser(ctx context.Context, login, password string) (string, string, error) {
 
-	ctx, cancel := context.WithTimeout(context.Background(), models.TimeOut)
-	defer cancel()
-
-	if _, err := p.pool.Exec(ctx, `insert into users (user_id) values ($1)`, user); err != nil {
-		pgerr, ok := err.(*pgconn.PgError)
-		if ok {
-			if pgerr.Code == "23505" {
-				return true, nil
-			}
-		}
+	user, pass, ID := "", "", ""
+	err := p.pool.QueryRow(ctx, `select user_id, user_login, user_password from keeper_auth where user_login = $1`, login).
+		Scan(&ID, &user, &pass)
+	if err != nil {
+		return "", "", models.ErrNotExist
 	}
-	return false, nil
+
+	return pass, ID, nil
 }

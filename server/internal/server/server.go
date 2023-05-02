@@ -12,7 +12,6 @@ import (
 	pb "github.com/RomanIkonnikov93/keeper/server/internal/proto"
 	"github.com/RomanIkonnikov93/keeper/server/internal/repository"
 	"github.com/RomanIkonnikov93/keeper/server/pkg/logging"
-
 	"google.golang.org/grpc"
 )
 
@@ -28,8 +27,7 @@ func StartServer(rep repository.Reps, cfg config.Config, logger *logging.Logger)
 		if err != nil {
 			logger.Fatal("net.Listen: ", err)
 		}
-		s := grpc.NewServer(
-			grpc.UnaryInterceptor(gapi.UnaryUserValidationInterceptor))
+		s := grpc.NewServer()
 		pb.RegisterKeeperServer(s, gapi.InitServices(rep, cfg, logger))
 
 		go func() {

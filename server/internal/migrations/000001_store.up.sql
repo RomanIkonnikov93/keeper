@@ -1,10 +1,10 @@
-create table if not exists users_auth (
+create table if not exists users_credentials (
     record_id serial,
     record_type text,
     user_id varchar(27) references keeper_auth (user_id) not null,
     description text,
     metadata text,
-    user_encrypted_login varchar(255),
+    user_login varchar(255),
     user_encrypted_password varchar(255),
     del_flag boolean default false,
     created_at timestamp not null default now()
