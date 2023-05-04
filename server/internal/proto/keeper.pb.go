@@ -97,9 +97,9 @@ type Record struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	RecordId    int32  `protobuf:"varint,1,opt,name=record_id,json=recordId,proto3" json:"record_id,omitempty"`
+	RecordID    int32  `protobuf:"varint,1,opt,name=record_id,json=recordId,proto3" json:"record_id,omitempty"`
 	RecordType  string `protobuf:"bytes,2,opt,name=record_type,json=recordType,proto3" json:"record_type,omitempty"`
-	UserId      string `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserID      string `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	Metadata    string `protobuf:"bytes,5,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	Login       string `protobuf:"bytes,6,opt,name=login,proto3" json:"login,omitempty"`
@@ -143,7 +143,7 @@ func (*Record) Descriptor() ([]byte, []int) {
 
 func (x *Record) GetRecordId() int32 {
 	if x != nil {
-		return x.RecordId
+		return x.RecordID
 	}
 	return 0
 }
@@ -157,7 +157,7 @@ func (x *Record) GetRecordType() string {
 
 func (x *Record) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.UserID
 	}
 	return ""
 }

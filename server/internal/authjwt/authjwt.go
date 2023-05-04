@@ -1,7 +1,10 @@
 package authjwt
 
 import (
-	"github.com/RomanIkonnikov93/keeper/server/internal/config"
+	"context"
+
+	"github.com/RomanIkonnikov93/keeper/server/internal/models"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -21,11 +24,24 @@ func EncodeJWT(ID, key string) (string, error) {
 	return ss, nil
 }
 
-func ParseJWTWithClaims(token string, cfg config.Config) (string, error) {
+func UserTokenValidation(ctx context.Context, key string) (string, error) {
 
-	tkn, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return cfg.JWTSecretKey, nil
+	md, ok := metadata.FromIncomingContext(ctx)
+
+	if !ok || len(md.Get("usertoken")) == 0 {
+		return "", models.ErrNotExist
+	}
+	t, err := jwt.Parse(md["usertoken"][0], func(token *jwt.Token) (interface{}, error) {
+		return []byte(key), nil
 	})
+	if err != nil || !t.Valid {
+		return "", models.ErrNotValid
+	}
+
+	tkn, err := jwt.ParseWithClaims(md["usertoken"][0], &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return key, nil
+	})
+
 	if claims, ok := tkn.Claims.(*jwt.RegisteredClaims); ok {
 		return claims.ID, nil
 	} else {
