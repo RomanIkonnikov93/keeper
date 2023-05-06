@@ -25,11 +25,31 @@ const (
 	Card        = "users_cards"
 )
 
+type Record struct {
+	RecordID    int32
+	RecordType  string
+	Description string
+	Metadata    string
+	Login       string
+	Password    string
+	Card        string
+	File        []byte
+	CreatedAt   string
+}
+
 // Query for repository.
 var (
 	QueryAddCredentials = `insert into users_credentials (user_id,description,metadata,user_login,user_password) values ($1, $2, $3, $4, $5)`
 	QueryAddCard        = `insert into users_cards (user_id,description,metadata,user_card) values ($1, $2, $3, $4)`
 	QueryAddFile        = `insert into users_files (user_id,description,metadata,user_file) values ($1, $2, $3, $4)`
+
+	QueryGetCredentials = `select description, metadata, user_login, user_password, del_flag, created_at from users_credentials where user_id = $1 and record_id = $2`
+	QueryGetCard        = `select description, metadata, user_card, del_flag, created_at from users_cards where user_id = $1 and record_id = $2`
+	QueryGetFile        = `select description, metadata, user_file, del_flag, created_at from users_files where user_id = $1 and record_id = $2`
+
+	QueryGetAllCredentials = `select record_id, description, metadata, user_login, user_password, created_at from users_credentials where user_id = $1 and del_flag = false`
+	QueryGetAllCard        = `select record_id, description, metadata, user_card, created_at from users_cards where user_id = $1 and del_flag = false`
+	QueryGetAllFile        = `select record_id, description, metadata, user_file, created_at from users_files where user_id = $1 and del_flag = false`
 
 	QueryUpdateCredentials = `update users_credentials set description = $1, metadata = $2, user_login = $3, user_password= $4 where user_id = $5 and record_id = $6`
 	QueryUpdateCard        = `update users_cards set description = $1, metadata = $2, user_card = $3 where user_id = $4 and record_id = $5`

@@ -128,33 +128,43 @@ func (k *KeeperServiceServer) AddRecord(ctx context.Context, in *pb.Record) (*em
 
 	switch in.RecordType {
 	case models.Credentials:
+
 		if in.Login == "" || in.Password == "" {
 			k.logger.Error(status.Error(codes.InvalidArgument, ""))
 			return nil, status.Error(codes.InvalidArgument, "")
 		}
+
 		encrypted, err := crypt.Encrypt([]byte(in.Password), []byte(k.cfg.SecretKey))
 		if err != nil {
 			k.logger.Error(err)
 			return nil, err
 		}
+
 		in.Password = encrypted
+
 	case models.Card:
+
 		valid, err := cardvalid.CheckCard(in.Card)
 		if !valid || err != nil {
 			k.logger.Error(status.Error(codes.InvalidArgument, ""))
 			return nil, status.Error(codes.InvalidArgument, "")
 		}
+
 		encrypted, err := crypt.Encrypt([]byte(in.Card), []byte(k.cfg.SecretKey))
 		if err != nil {
 			k.logger.Error(err)
 			return nil, err
 		}
+
 		in.Card = encrypted
+
 	case models.File:
+
 		if len(in.File) == 0 {
 			k.logger.Error(status.Error(codes.InvalidArgument, ""))
 			return nil, status.Error(codes.InvalidArgument, "")
 		}
+
 	default:
 		k.logger.Error(status.Error(codes.InvalidArgument, ""))
 		return nil, status.Error(codes.InvalidArgument, "")
@@ -169,7 +179,7 @@ func (k *KeeperServiceServer) AddRecord(ctx context.Context, in *pb.Record) (*em
 	return out, nil
 }
 
-func (k *KeeperServiceServer) GetRecord(ctx context.Context, in *pb.Record) (*pb.Record, error) {
+func (k *KeeperServiceServer) GetRecordByID(ctx context.Context, in *pb.Record) (*pb.Record, error) {
 
 	out := &pb.Record{}
 
@@ -178,7 +188,59 @@ func (k *KeeperServiceServer) GetRecord(ctx context.Context, in *pb.Record) (*pb
 		k.logger.Error(err)
 		return nil, status.Error(codes.Unauthenticated, "")
 	}
+
 	in.UserID = ID
+
+	if in.RecordID == 0 {
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	switch in.RecordType {
+	case models.Credentials:
+
+		out, err = k.rep.Get(ctx, in)
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		password, err := crypt.Decrypt(out.Password, []byte(k.cfg.SecretKey))
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		out.Password = string(password)
+
+	case models.Card:
+
+		out, err = k.rep.Get(ctx, in)
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		card, err := crypt.Decrypt(out.Card, []byte(k.cfg.SecretKey))
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		out.Card = string(card)
+
+	case models.File:
+
+		out, err = k.rep.Get(ctx, in)
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+	default:
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
 
 	return out, nil
 }
@@ -192,7 +254,77 @@ func (k *KeeperServiceServer) GetAllRecordsByType(ctx context.Context, in *pb.Re
 		k.logger.Error(err)
 		return nil, status.Error(codes.Unauthenticated, "")
 	}
+
 	in.UserID = ID
+
+	switch in.RecordType {
+	case models.Credentials:
+	case models.Card:
+	case models.File:
+	default:
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	data, err := k.rep.GetAllByType(ctx, in)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	for _, val := range data {
+		switch val.RecordType {
+		case models.Credentials:
+
+			password, err := crypt.Decrypt(val.Password, []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
+
+			out.Note = append(out.Note, &pb.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				Login:       val.Login,
+				Password:    string(password),
+				CreatedAt:   val.CreatedAt,
+			})
+
+		case models.Card:
+
+			card, err := crypt.Decrypt(val.Card, []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
+
+			out.Note = append(out.Note, &pb.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				Card:        string(card),
+				CreatedAt:   val.CreatedAt,
+			})
+
+		case models.File:
+
+			out.Note = append(out.Note, &pb.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				File:        val.File,
+				CreatedAt:   val.CreatedAt,
+			})
+
+		default:
+			k.logger.Error(status.Error(codes.InvalidArgument, ""))
+			return nil, status.Error(codes.InvalidArgument, "")
+		}
+	}
 
 	return out, nil
 }
@@ -216,33 +348,43 @@ func (k *KeeperServiceServer) UpdateRecordByID(ctx context.Context, in *pb.Recor
 
 	switch in.RecordType {
 	case models.Credentials:
+
 		if in.Login == "" || in.Password == "" {
 			k.logger.Error(status.Error(codes.InvalidArgument, ""))
 			return nil, status.Error(codes.InvalidArgument, "")
 		}
+
 		encrypted, err := crypt.Encrypt([]byte(in.Password), []byte(k.cfg.SecretKey))
 		if err != nil {
 			k.logger.Error(err)
 			return nil, err
 		}
+
 		in.Password = encrypted
+
 	case models.Card:
+
 		valid, err := cardvalid.CheckCard(in.Card)
 		if !valid || err != nil {
 			k.logger.Error(status.Error(codes.InvalidArgument, ""))
 			return nil, status.Error(codes.InvalidArgument, "")
 		}
+
 		encrypted, err := crypt.Encrypt([]byte(in.Card), []byte(k.cfg.SecretKey))
 		if err != nil {
 			k.logger.Error(err)
 			return nil, err
 		}
+
 		in.Card = encrypted
+
 	case models.File:
+
 		if len(in.File) == 0 {
 			k.logger.Error(status.Error(codes.InvalidArgument, ""))
 			return nil, status.Error(codes.InvalidArgument, "")
 		}
+
 	default:
 		k.logger.Error(status.Error(codes.InvalidArgument, ""))
 		return nil, status.Error(codes.InvalidArgument, "")

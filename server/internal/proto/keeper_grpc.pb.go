@@ -23,7 +23,7 @@ const (
 	Keeper_RegistrationUser_FullMethodName    = "/keeper.Keeper/RegistrationUser"
 	Keeper_LoginUser_FullMethodName           = "/keeper.Keeper/LoginUser"
 	Keeper_AddRecord_FullMethodName           = "/keeper.Keeper/AddRecord"
-	Keeper_GetRecord_FullMethodName           = "/keeper.Keeper/GetRecord"
+	Keeper_GetRecord_FullMethodName           = "/keeper.Keeper/GetRecordByID"
 	Keeper_GetAllRecordsByType_FullMethodName = "/keeper.Keeper/GetAllRecordsByType"
 	Keeper_UpdateRecordByID_FullMethodName    = "/keeper.Keeper/UpdateRecordByID"
 	Keeper_DeleteRecordByID_FullMethodName    = "/keeper.Keeper/DeleteRecordByID"
@@ -120,7 +120,7 @@ type KeeperServer interface {
 	RegistrationUser(context.Context, *Auth) (*Auth, error)
 	LoginUser(context.Context, *Auth) (*Auth, error)
 	AddRecord(context.Context, *Record) (*emptypb.Empty, error)
-	GetRecord(context.Context, *Record) (*Record, error)
+	GetRecordByID(context.Context, *Record) (*Record, error)
 	GetAllRecordsByType(context.Context, *Record) (*List, error)
 	UpdateRecordByID(context.Context, *Record) (*emptypb.Empty, error)
 	DeleteRecordByID(context.Context, *Record) (*emptypb.Empty, error)
@@ -140,8 +140,8 @@ func (UnimplementedKeeperServer) LoginUser(context.Context, *Auth) (*Auth, error
 func (UnimplementedKeeperServer) AddRecord(context.Context, *Record) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddRecord not implemented")
 }
-func (UnimplementedKeeperServer) GetRecord(context.Context, *Record) (*Record, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRecord not implemented")
+func (UnimplementedKeeperServer) GetRecordByID(context.Context, *Record) (*Record, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRecordByID not implemented")
 }
 func (UnimplementedKeeperServer) GetAllRecordsByType(context.Context, *Record) (*List, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllRecordsByType not implemented")
@@ -225,14 +225,14 @@ func _Keeper_GetRecord_Handler(srv interface{}, ctx context.Context, dec func(in
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KeeperServer).GetRecord(ctx, in)
+		return srv.(KeeperServer).GetRecordByID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: Keeper_GetRecord_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).GetRecord(ctx, req.(*Record))
+		return srv.(KeeperServer).GetRecordByID(ctx, req.(*Record))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -311,7 +311,7 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Keeper_AddRecord_Handler,
 		},
 		{
-			MethodName: "GetRecord",
+			MethodName: "GetRecordByID",
 			Handler:    _Keeper_GetRecord_Handler,
 		},
 		{

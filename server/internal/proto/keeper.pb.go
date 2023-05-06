@@ -347,14 +347,14 @@ var file_keeper_server_internal_proto_keeper_proto_depIdxs = []int32{
 	0, // 1: keeper.Keeper.RegistrationUser:input_type -> keeper.Auth
 	0, // 2: keeper.Keeper.LoginUser:input_type -> keeper.Auth
 	1, // 3: keeper.Keeper.AddRecord:input_type -> keeper.Record
-	1, // 4: keeper.Keeper.GetRecord:input_type -> keeper.Record
+	1, // 4: keeper.Keeper.GetRecordByID:input_type -> keeper.Record
 	1, // 5: keeper.Keeper.GetAllRecordsByType:input_type -> keeper.Record
 	1, // 6: keeper.Keeper.UpdateRecordByID:input_type -> keeper.Record
 	1, // 7: keeper.Keeper.DeleteRecordByID:input_type -> keeper.Record
 	0, // 8: keeper.Keeper.RegistrationUser:output_type -> keeper.Auth
 	0, // 9: keeper.Keeper.LoginUser:output_type -> keeper.Auth
 	3, // 10: keeper.Keeper.AddRecord:output_type -> google.protobuf.Empty
-	1, // 11: keeper.Keeper.GetRecord:output_type -> keeper.Record
+	1, // 11: keeper.Keeper.GetRecordByID:output_type -> keeper.Record
 	2, // 12: keeper.Keeper.GetAllRecordsByType:output_type -> keeper.List
 	3, // 13: keeper.Keeper.UpdateRecordByID:output_type -> google.protobuf.Empty
 	3, // 14: keeper.Keeper.DeleteRecordByID:output_type -> google.protobuf.Empty

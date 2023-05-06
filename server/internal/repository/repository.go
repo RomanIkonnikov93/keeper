@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/RomanIkonnikov93/keeper/server/internal/models"
 	pb "github.com/RomanIkonnikov93/keeper/server/internal/proto"
@@ -15,8 +16,8 @@ import (
 // Repository interface for repository methods.
 type Repository interface {
 	Add(ctx context.Context, record *pb.Record) error
-	Get(ctx context.Context, short string) (string, error)
-	GetAllByType(ctx context.Context) (int, int, error)
+	Get(ctx context.Context, in *pb.Record) (*pb.Record, error)
+	GetAllByType(ctx context.Context, in *pb.Record) ([]models.Record, error)
 	UpdateByID(ctx context.Context, in *pb.Record) error
 	DeleteByID(ctx context.Context, in *pb.Record) error
 }
@@ -109,13 +110,184 @@ func (p *Pool) Add(ctx context.Context, in *pb.Record) error {
 }
 
 // Get
-func (p *Pool) Get(ctx context.Context, short string) (string, error) {
-	return "", nil
+func (p *Pool) Get(ctx context.Context, in *pb.Record) (*pb.Record, error) {
+
+	var (
+		createdAt time.Time
+		flag      bool
+	)
+
+	switch in.RecordType {
+
+	case models.Credentials:
+		rows, err := p.pool.Query(ctx, models.QueryGetCredentials, in.UserID, in.RecordID)
+		if err != nil {
+			return nil, err
+		}
+		for rows.Next() {
+			if err = rows.Scan(&in.Description, &in.Metadata, &in.Login, &in.Password, &flag, &createdAt); err != nil {
+				return nil, err
+			}
+		}
+		if flag {
+			return nil, models.ErrDelFlag
+		}
+
+		in.CreatedAt = createdAt.String()
+		in.UserID = ""
+
+		return in, nil
+
+	case models.Card:
+		rows, err := p.pool.Query(ctx, models.QueryGetCard, in.UserID, in.RecordID)
+		if err != nil {
+			return nil, err
+		}
+		for rows.Next() {
+			if err = rows.Scan(&in.Description, &in.Metadata, &in.Card, &flag, &createdAt); err != nil {
+				return nil, err
+			}
+		}
+		if flag {
+			return nil, models.ErrDelFlag
+		}
+
+		in.CreatedAt = createdAt.String()
+		in.UserID = ""
+
+		return in, nil
+
+	case models.File:
+		rows, err := p.pool.Query(ctx, models.QueryGetFile, in.UserID, in.RecordID)
+		if err != nil {
+			return nil, err
+		}
+		for rows.Next() {
+			if err = rows.Scan(&in.Description, &in.Metadata, &in.File, &flag, &createdAt); err != nil {
+				return nil, err
+			}
+		}
+		if flag {
+			return nil, models.ErrDelFlag
+		}
+
+		in.CreatedAt = createdAt.String()
+		in.UserID = ""
+
+		return in, nil
+
+	default:
+
+		return nil, models.ErrInvalidData
+	}
 }
 
 // GetAllByType
-func (p *Pool) GetAllByType(ctx context.Context) (int, int, error) {
-	return 0, 0, nil
+func (p *Pool) GetAllByType(ctx context.Context, in *pb.Record) ([]models.Record, error) {
+
+	var (
+		createdAt time.Time
+	)
+
+	out := make([]models.Record, 0)
+
+	switch in.RecordType {
+
+	case models.Credentials:
+		rows, err := p.pool.Query(ctx, models.QueryGetAllCredentials, in.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		for rows.Next() {
+
+			if err = rows.Scan(&in.RecordID, &in.Description, &in.Metadata, &in.Login, &in.Password, &createdAt); err != nil {
+				return nil, err
+			}
+
+			record := models.Record{
+				RecordID:    in.RecordID,
+				RecordType:  in.RecordType,
+				Description: in.Description,
+				Metadata:    in.Metadata,
+				Login:       in.Login,
+				Password:    in.Password,
+				CreatedAt:   createdAt.String(),
+			}
+
+			out = append(out, record)
+		}
+
+		if len(out) < 1 {
+			return nil, models.ErrNotExist
+		}
+
+		return out, nil
+
+	case models.Card:
+		rows, err := p.pool.Query(ctx, models.QueryGetAllCard, in.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		for rows.Next() {
+
+			if err = rows.Scan(&in.RecordID, &in.Description, &in.Metadata, &in.Card, &createdAt); err != nil {
+				return nil, err
+			}
+
+			record := models.Record{
+				RecordID:    in.RecordID,
+				RecordType:  in.RecordType,
+				Description: in.Description,
+				Metadata:    in.Metadata,
+				Card:        in.Card,
+				CreatedAt:   createdAt.String(),
+			}
+
+			out = append(out, record)
+		}
+
+		if len(out) < 1 {
+			return nil, models.ErrNotExist
+		}
+
+		return out, nil
+
+	case models.File:
+		rows, err := p.pool.Query(ctx, models.QueryGetAllFile, in.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		for rows.Next() {
+
+			if err = rows.Scan(&in.RecordID, &in.Description, &in.Metadata, &in.File, &createdAt); err != nil {
+				return nil, err
+			}
+
+			record := models.Record{
+				RecordID:    in.RecordID,
+				RecordType:  in.RecordType,
+				Description: in.Description,
+				Metadata:    in.Metadata,
+				File:        in.File,
+				CreatedAt:   createdAt.String(),
+			}
+
+			out = append(out, record)
+		}
+
+		if len(out) < 1 {
+			return nil, models.ErrNotExist
+		}
+
+		return out, nil
+
+	default:
+
+		return nil, models.ErrInvalidData
+	}
 }
 
 // UpdateByID
