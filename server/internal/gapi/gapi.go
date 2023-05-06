@@ -433,3 +433,15 @@ func (k *KeeperServiceServer) DeleteRecordByID(ctx context.Context, in *pb.Recor
 
 	return out, nil
 }
+
+func (k *KeeperServiceServer) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+
+	out := &emptypb.Empty{}
+
+	err := k.ping.PingDB()
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+	return out, nil
+}

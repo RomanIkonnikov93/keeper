@@ -23,10 +23,11 @@ const (
 	Keeper_RegistrationUser_FullMethodName    = "/keeper.Keeper/RegistrationUser"
 	Keeper_LoginUser_FullMethodName           = "/keeper.Keeper/LoginUser"
 	Keeper_AddRecord_FullMethodName           = "/keeper.Keeper/AddRecord"
-	Keeper_GetRecord_FullMethodName           = "/keeper.Keeper/GetRecordByID"
+	Keeper_GetRecordByID_FullMethodName       = "/keeper.Keeper/GetRecordByID"
 	Keeper_GetAllRecordsByType_FullMethodName = "/keeper.Keeper/GetAllRecordsByType"
 	Keeper_UpdateRecordByID_FullMethodName    = "/keeper.Keeper/UpdateRecordByID"
 	Keeper_DeleteRecordByID_FullMethodName    = "/keeper.Keeper/DeleteRecordByID"
+	Keeper_Ping_FullMethodName                = "/keeper.Keeper/Ping"
 )
 
 // KeeperClient is the client API for Keeper service.
@@ -36,10 +37,11 @@ type KeeperClient interface {
 	RegistrationUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error)
 	LoginUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error)
 	AddRecord(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetRecord(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error)
+	GetRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error)
 	GetAllRecordsByType(ctx context.Context, in *Record, opts ...grpc.CallOption) (*List, error)
 	UpdateRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type keeperClient struct {
@@ -77,9 +79,9 @@ func (c *keeperClient) AddRecord(ctx context.Context, in *Record, opts ...grpc.C
 	return out, nil
 }
 
-func (c *keeperClient) GetRecord(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error) {
+func (c *keeperClient) GetRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error) {
 	out := new(Record)
-	err := c.cc.Invoke(ctx, Keeper_GetRecord_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Keeper_GetRecordByID_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +115,15 @@ func (c *keeperClient) DeleteRecordByID(ctx context.Context, in *Record, opts ..
 	return out, nil
 }
 
+func (c *keeperClient) Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Keeper_Ping_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeeperServer is the server API for Keeper service.
 // All implementations must embed UnimplementedKeeperServer
 // for forward compatibility
@@ -124,6 +135,7 @@ type KeeperServer interface {
 	GetAllRecordsByType(context.Context, *Record) (*List, error)
 	UpdateRecordByID(context.Context, *Record) (*emptypb.Empty, error)
 	DeleteRecordByID(context.Context, *Record) (*emptypb.Empty, error)
+	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedKeeperServer()
 }
 
@@ -151,6 +163,9 @@ func (UnimplementedKeeperServer) UpdateRecordByID(context.Context, *Record) (*em
 }
 func (UnimplementedKeeperServer) DeleteRecordByID(context.Context, *Record) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecordByID not implemented")
+}
+func (UnimplementedKeeperServer) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedKeeperServer) mustEmbedUnimplementedKeeperServer() {}
 
@@ -219,7 +234,7 @@ func _Keeper_AddRecord_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Keeper_GetRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Keeper_GetRecordByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Record)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -229,7 +244,7 @@ func _Keeper_GetRecord_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Keeper_GetRecord_FullMethodName,
+		FullMethod: Keeper_GetRecordByID_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KeeperServer).GetRecordByID(ctx, req.(*Record))
@@ -291,6 +306,24 @@ func _Keeper_DeleteRecordByID_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Keeper_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeeperServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Keeper_Ping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeeperServer).Ping(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Keeper_ServiceDesc is the grpc.ServiceDesc for Keeper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -312,7 +345,7 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 		},
 		{
 			MethodName: "GetRecordByID",
-			Handler:    _Keeper_GetRecord_Handler,
+			Handler:    _Keeper_GetRecordByID_Handler,
 		},
 		{
 			MethodName: "GetAllRecordsByType",
@@ -325,6 +358,10 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteRecordByID",
 			Handler:    _Keeper_DeleteRecordByID_Handler,
+		},
+		{
+			MethodName: "Ping",
+			Handler:    _Keeper_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
