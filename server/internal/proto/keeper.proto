@@ -17,6 +17,7 @@ service Keeper {
               rpc DeleteRecordByID(Record) returns (google.protobuf.Empty);
 
                 rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+                  rpc CheckChanges(Record) returns (List);
 
 
 }

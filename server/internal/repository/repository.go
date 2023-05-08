@@ -20,6 +20,7 @@ type Repository interface {
 	GetAllByType(ctx context.Context, in *pb.Record) ([]models.Record, error)
 	UpdateByID(ctx context.Context, in *pb.Record) error
 	DeleteByID(ctx context.Context, in *pb.Record) error
+	CheckChanges(ctx context.Context, in *pb.Record) ([]models.Record, error)
 }
 
 // Pool struct for postgresql connection.
@@ -133,7 +134,7 @@ func (p *Pool) Get(ctx context.Context, in *pb.Record) (*pb.Record, error) {
 			return nil, models.ErrDelFlag
 		}
 
-		in.CreatedAt = createdAt.String()
+		in.CreatedAt = createdAt.Format(models.TimeFormat)
 		in.UserID = ""
 
 		return in, nil
@@ -152,7 +153,7 @@ func (p *Pool) Get(ctx context.Context, in *pb.Record) (*pb.Record, error) {
 			return nil, models.ErrDelFlag
 		}
 
-		in.CreatedAt = createdAt.String()
+		in.CreatedAt = createdAt.Format(models.TimeFormat)
 		in.UserID = ""
 
 		return in, nil
@@ -171,7 +172,7 @@ func (p *Pool) Get(ctx context.Context, in *pb.Record) (*pb.Record, error) {
 			return nil, models.ErrDelFlag
 		}
 
-		in.CreatedAt = createdAt.String()
+		in.CreatedAt = createdAt.Format(models.TimeFormat)
 		in.UserID = ""
 
 		return in, nil
@@ -212,7 +213,7 @@ func (p *Pool) GetAllByType(ctx context.Context, in *pb.Record) ([]models.Record
 				Metadata:    in.Metadata,
 				Login:       in.Login,
 				Password:    in.Password,
-				CreatedAt:   createdAt.String(),
+				CreatedAt:   createdAt.Format(models.TimeFormat),
 			}
 
 			out = append(out, record)
@@ -242,7 +243,7 @@ func (p *Pool) GetAllByType(ctx context.Context, in *pb.Record) ([]models.Record
 				Description: in.Description,
 				Metadata:    in.Metadata,
 				Card:        in.Card,
-				CreatedAt:   createdAt.String(),
+				CreatedAt:   createdAt.Format(models.TimeFormat),
 			}
 
 			out = append(out, record)
@@ -272,7 +273,7 @@ func (p *Pool) GetAllByType(ctx context.Context, in *pb.Record) ([]models.Record
 				Description: in.Description,
 				Metadata:    in.Metadata,
 				File:        in.File,
-				CreatedAt:   createdAt.String(),
+				CreatedAt:   createdAt.Format(models.TimeFormat),
 			}
 
 			out = append(out, record)
@@ -336,4 +337,86 @@ func (p *Pool) DeleteByID(ctx context.Context, in *pb.Record) error {
 	}
 
 	return nil
+}
+
+func (p *Pool) CheckChanges(ctx context.Context, in *pb.Record) ([]models.Record, error) {
+
+	var (
+		createdAt time.Time
+	)
+
+	out := make([]models.Record, 0)
+
+	timeOfCreation, err := time.Parse(models.TimeFormat, in.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	switch in.RecordType {
+
+	case models.Credentials:
+		rows, err := p.pool.Query(ctx, models.QueryCheckChangesCredentials, in.UserID, timeOfCreation)
+		if err != nil {
+			return nil, err
+		}
+
+		for rows.Next() {
+
+			if err = rows.Scan(&in.RecordID, &in.Description, &in.Metadata, &in.Login, &in.Password, &createdAt); err != nil {
+				return nil, err
+			}
+
+			record := models.Record{
+				RecordID:    in.RecordID,
+				RecordType:  in.RecordType,
+				Description: in.Description,
+				Metadata:    in.Metadata,
+				Login:       in.Login,
+				Password:    in.Password,
+				CreatedAt:   createdAt.Format(models.TimeFormat),
+			}
+
+			out = append(out, record)
+		}
+
+		if len(out) < 1 {
+			return nil, models.ErrNotExist
+		}
+
+		return out, nil
+
+	case models.Card:
+		rows, err := p.pool.Query(ctx, models.QueryCheckChangesCard, in.UserID, timeOfCreation)
+		if err != nil {
+			return nil, err
+		}
+
+		for rows.Next() {
+
+			if err = rows.Scan(&in.RecordID, &in.Description, &in.Metadata, &in.Card, &createdAt); err != nil {
+				return nil, err
+			}
+
+			record := models.Record{
+				RecordID:    in.RecordID,
+				RecordType:  in.RecordType,
+				Description: in.Description,
+				Metadata:    in.Metadata,
+				Card:        in.Card,
+				CreatedAt:   createdAt.Format(models.TimeFormat),
+			}
+
+			out = append(out, record)
+		}
+
+		if len(out) < 1 {
+			return nil, models.ErrNotExist
+		}
+
+		return out, nil
+
+	default:
+
+		return nil, models.ErrInvalidData
+	}
 }

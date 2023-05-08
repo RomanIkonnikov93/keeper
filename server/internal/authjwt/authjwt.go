@@ -12,7 +12,7 @@ import (
 func EncodeJWT(ID, key string) (string, error) {
 
 	var claims = jwt.RegisteredClaims{
-		ID: ID,
+		Subject: ID,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -43,7 +43,7 @@ func UserTokenValidation(ctx context.Context, key string) (string, error) {
 	})
 
 	if claims, ok := tkn.Claims.(*jwt.RegisteredClaims); ok {
-		return claims.ID, nil
+		return claims.Subject, nil
 	} else {
 		return "", err
 	}

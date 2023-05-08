@@ -28,6 +28,7 @@ const (
 	Keeper_UpdateRecordByID_FullMethodName    = "/keeper.Keeper/UpdateRecordByID"
 	Keeper_DeleteRecordByID_FullMethodName    = "/keeper.Keeper/DeleteRecordByID"
 	Keeper_Ping_FullMethodName                = "/keeper.Keeper/Ping"
+	Keeper_CheckChanges_FullMethodName        = "/keeper.Keeper/CheckChanges"
 )
 
 // KeeperClient is the client API for Keeper service.
@@ -42,6 +43,7 @@ type KeeperClient interface {
 	UpdateRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CheckChanges(ctx context.Context, in *Record, opts ...grpc.CallOption) (*List, error)
 }
 
 type keeperClient struct {
@@ -124,6 +126,15 @@ func (c *keeperClient) Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc
 	return out, nil
 }
 
+func (c *keeperClient) CheckChanges(ctx context.Context, in *Record, opts ...grpc.CallOption) (*List, error) {
+	out := new(List)
+	err := c.cc.Invoke(ctx, Keeper_CheckChanges_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeeperServer is the server API for Keeper service.
 // All implementations must embed UnimplementedKeeperServer
 // for forward compatibility
@@ -136,6 +147,7 @@ type KeeperServer interface {
 	UpdateRecordByID(context.Context, *Record) (*emptypb.Empty, error)
 	DeleteRecordByID(context.Context, *Record) (*emptypb.Empty, error)
 	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	CheckChanges(context.Context, *Record) (*List, error)
 	mustEmbedUnimplementedKeeperServer()
 }
 
@@ -166,6 +178,9 @@ func (UnimplementedKeeperServer) DeleteRecordByID(context.Context, *Record) (*em
 }
 func (UnimplementedKeeperServer) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedKeeperServer) CheckChanges(context.Context, *Record) (*List, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckChanges not implemented")
 }
 func (UnimplementedKeeperServer) mustEmbedUnimplementedKeeperServer() {}
 
@@ -324,6 +339,24 @@ func _Keeper_Ping_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Keeper_CheckChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Record)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeeperServer).CheckChanges(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Keeper_CheckChanges_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeeperServer).CheckChanges(ctx, req.(*Record))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Keeper_ServiceDesc is the grpc.ServiceDesc for Keeper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -362,6 +395,10 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _Keeper_Ping_Handler,
+		},
+		{
+			MethodName: "CheckChanges",
+			Handler:    _Keeper_CheckChanges_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

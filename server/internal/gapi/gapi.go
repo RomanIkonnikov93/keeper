@@ -434,7 +434,7 @@ func (k *KeeperServiceServer) DeleteRecordByID(ctx context.Context, in *pb.Recor
 	return out, nil
 }
 
-func (k *KeeperServiceServer) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+func (k *KeeperServiceServer) Ping(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
 
 	out := &emptypb.Empty{}
 
@@ -443,5 +443,77 @@ func (k *KeeperServiceServer) Ping(context.Context, *emptypb.Empty) (*emptypb.Em
 		k.logger.Error(err)
 		return nil, err
 	}
+	return out, nil
+}
+
+func (k *KeeperServiceServer) CheckChanges(ctx context.Context, in *pb.Record) (*pb.List, error) {
+
+	out := &pb.List{}
+
+	ID, err := authjwt.UserTokenValidation(ctx, k.cfg.JWTSecretKey)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, status.Error(codes.Unauthenticated, "")
+	}
+
+	in.UserID = ID
+
+	switch in.RecordType {
+	case models.Credentials:
+	case models.Card:
+	default:
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	data, err := k.rep.CheckChanges(ctx, in)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	for _, val := range data {
+		switch val.RecordType {
+		case models.Credentials:
+
+			password, err := crypt.Decrypt(val.Password, []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
+
+			out.Note = append(out.Note, &pb.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				Login:       val.Login,
+				Password:    string(password),
+				CreatedAt:   val.CreatedAt,
+			})
+
+		case models.Card:
+
+			card, err := crypt.Decrypt(val.Card, []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
+
+			out.Note = append(out.Note, &pb.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				Card:        string(card),
+				CreatedAt:   val.CreatedAt,
+			})
+
+		default:
+			k.logger.Error(status.Error(codes.InvalidArgument, ""))
+			return nil, status.Error(codes.InvalidArgument, "")
+		}
+	}
+
 	return out, nil
 }

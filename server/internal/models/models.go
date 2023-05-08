@@ -6,8 +6,10 @@ import (
 	"time"
 )
 
-// TimeOut for ctx.
-const TimeOut = time.Second * 5
+const (
+	TimeOut    = time.Second * 5
+	TimeFormat = "2006-01-02 15:04:05 +0000 UTC"
+)
 
 // Repository errors.
 var (
@@ -51,7 +53,10 @@ var (
 	QueryGetAllCard        = `select record_id, description, metadata, user_card, created_at from users_cards where user_id = $1 and del_flag = false`
 	QueryGetAllFile        = `select record_id, description, metadata, user_file, created_at from users_files where user_id = $1 and del_flag = false`
 
-	QueryUpdateCredentials = `update users_credentials set description = $1, metadata = $2, user_login = $3, user_password= $4 where user_id = $5 and record_id = $6`
-	QueryUpdateCard        = `update users_cards set description = $1, metadata = $2, user_card = $3 where user_id = $4 and record_id = $5`
-	QueryUpdateFile        = `update users_files set description = $1, metadata = $2, user_file = $3 where user_id = $4 and record_id = $5`
+	QueryUpdateCredentials = `update users_credentials set description = $1, metadata = $2, user_login = $3, user_password= $4, created_at = now() where user_id = $5 and record_id = $6`
+	QueryUpdateCard        = `update users_cards set description = $1, metadata = $2, user_card = $3, created_at = now() where user_id = $4 and record_id = $5`
+	QueryUpdateFile        = `update users_files set description = $1, metadata = $2, user_file = $3, created_at = now() where user_id = $4 and record_id = $5`
+
+	QueryCheckChangesCredentials = `select record_id, description, metadata, user_login, user_password, created_at from users_credentials where user_id = $1 and del_flag = false and created_at > $2`
+	QueryCheckChangesCard        = `select record_id, description, metadata, user_card, created_at from users_cards where user_id = $1 and del_flag = false and created_at > $2`
 )
