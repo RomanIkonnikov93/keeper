@@ -23,8 +23,8 @@ var (
 // Users data types.
 const (
 	Credentials = "users_credentials"
-	File        = "users_files"
 	Card        = "users_cards"
+	File        = "users_files"
 )
 
 type Record struct {

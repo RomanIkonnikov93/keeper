@@ -13,6 +13,7 @@ import (
 	pb "github.com/RomanIkonnikov93/keeper/server/internal/proto"
 	"github.com/RomanIkonnikov93/keeper/server/internal/repository"
 	"github.com/RomanIkonnikov93/keeper/server/pkg/logging"
+
 	"google.golang.org/grpc"
 )
 

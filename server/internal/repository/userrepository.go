@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/RomanIkonnikov93/keeper/server/internal/models"
+
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -33,7 +34,7 @@ func NewPGIDRepository(pool *pgxpool.Pool) (*usersIDpg, error) {
 		return nil, err
 	}
 
-	migrationDir := filepath.Join(dir, "/internal/migrations/000001_users.up.sql")
+	migrationDir := filepath.Join(dir, "/migrations/000001_users.up.sql")
 
 	file, err := os.ReadFile(migrationDir)
 	if err != nil {

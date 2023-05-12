@@ -12,6 +12,7 @@ import (
 	pb "github.com/RomanIkonnikov93/keeper/server/internal/proto"
 	"github.com/RomanIkonnikov93/keeper/server/internal/repository"
 	"github.com/RomanIkonnikov93/keeper/server/pkg/logging"
+
 	"github.com/segmentio/ksuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -467,6 +468,10 @@ func (k *KeeperServiceServer) CheckChanges(ctx context.Context, in *pb.Record) (
 	}
 
 	data, err := k.rep.CheckChanges(ctx, in)
+	if errors.Is(err, models.ErrNotExist) {
+		k.logger.Error(err)
+		return nil, status.Error(codes.NotFound, "")
+	}
 	if err != nil {
 		k.logger.Error(err)
 		return nil, err
