@@ -350,41 +350,34 @@ func (k *KeeperServiceServer) UpdateRecordByID(ctx context.Context, in *pb.Recor
 	switch in.RecordType {
 	case models.Credentials:
 
-		if in.Login == "" || in.Password == "" {
-			k.logger.Error(status.Error(codes.InvalidArgument, ""))
-			return nil, status.Error(codes.InvalidArgument, "")
-		}
+		if in.Password != "" {
+			encrypted, err := crypt.Encrypt([]byte(in.Password), []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
 
-		encrypted, err := crypt.Encrypt([]byte(in.Password), []byte(k.cfg.SecretKey))
-		if err != nil {
-			k.logger.Error(err)
-			return nil, err
+			in.Password = encrypted
 		}
-
-		in.Password = encrypted
 
 	case models.Card:
 
-		valid, err := cardvalid.CheckCard(in.Card)
-		if !valid || err != nil {
-			k.logger.Error(status.Error(codes.InvalidArgument, ""))
-			return nil, status.Error(codes.InvalidArgument, "")
+		if in.Card != "" {
+			valid, err := cardvalid.CheckCard(in.Card)
+			if !valid || err != nil {
+				k.logger.Error(status.Error(codes.InvalidArgument, ""))
+				return nil, status.Error(codes.InvalidArgument, "")
+			}
+
+			encrypted, err := crypt.Encrypt([]byte(in.Card), []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
+
+			in.Card = encrypted
 		}
-
-		encrypted, err := crypt.Encrypt([]byte(in.Card), []byte(k.cfg.SecretKey))
-		if err != nil {
-			k.logger.Error(err)
-			return nil, err
-		}
-
-		in.Card = encrypted
-
 	case models.File:
-
-		if len(in.File) == 0 {
-			k.logger.Error(status.Error(codes.InvalidArgument, ""))
-			return nil, status.Error(codes.InvalidArgument, "")
-		}
 
 	default:
 		k.logger.Error(status.Error(codes.InvalidArgument, ""))

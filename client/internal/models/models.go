@@ -32,10 +32,10 @@ const (
 
 // Auth struct for user authorization and authentication.
 type Auth struct {
-	Login       string
-	Password    string
-	Token       string
-	LastChanges string
+	Login           string
+	Password        string
+	Token           string
+	LastChangesTime string
 }
 
 // Record to store input user data before sending it to the server.
@@ -47,6 +47,7 @@ type Record struct {
 	Login       string
 	Password    string
 	Card        string
+	File        []byte
 	CreatedAt   string
 	ActionType  string
 }

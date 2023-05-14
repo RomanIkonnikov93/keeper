@@ -39,7 +39,7 @@ func InitServices(cfg config.Config, logger *logging.Logger) (*KeeperServiceClie
 	return &KeeperServiceClient{
 		KeeperClient: client,
 		Auth: models.Auth{
-			LastChanges: models.DefaultLastChangesTime,
+			LastChangesTime: models.DefaultLastChangesTime,
 		},
 		Record: models.Record{},
 		Store:  models.Storage{},
@@ -86,12 +86,14 @@ func (k *KeeperServiceClient) LoginUser() error {
 	return nil
 }
 
-func (k *KeeperServiceClient) AddRecord(in *pb.Record) error {
+func (k *KeeperServiceClient) AddRecord() error {
+
+	in := k.SetRecordFields()
 
 	md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
-	switch in.RecordType {
+	switch k.Record.RecordType {
 	case models.Credentials:
 	case models.Card:
 	case models.File:
@@ -103,27 +105,46 @@ func (k *KeeperServiceClient) AddRecord(in *pb.Record) error {
 		return err
 	}
 
+	k.CleanRecordFields()
+
 	return nil
 }
 
+// func (k *KeeperServiceClient) GetRecordByID(ctx context.Context, in *interface{}, opts ...grpc.CallOption) (*interface{}, error) {
 //
-//func (k *KeeperServiceClient) GetRecordByID(ctx context.Context, in *interface{}, opts ...grpc.CallOption) (*interface{}, error) {
+//		md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
+//		ctx := metadata.NewOutgoingContext(context.Background(), md)
+//	}
 //
-//	md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
-//	ctx := metadata.NewOutgoingContext(context.Background(), md)
-//}
+// func (k *KeeperServiceClient) GetAllRecordsByType(ctx context.Context, in *interface{}, opts ...grpc.CallOption) (*interface{}, error) {
 //
-//func (k *KeeperServiceClient) GetAllRecordsByType(ctx context.Context, in *interface{}, opts ...grpc.CallOption) (*interface{}, error) {
-//
-//	md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
-//	ctx := metadata.NewOutgoingContext(context.Background(), md)
-//}
-//
-//func (k *KeeperServiceClient) UpdateRecordByID(ctx context.Context, in *interface{}, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-//
-//	md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
-//	ctx := metadata.NewOutgoingContext(context.Background(), md)
-//}
+//		md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
+//		ctx := metadata.NewOutgoingContext(context.Background(), md)
+//	}
+func (k *KeeperServiceClient) UpdateRecordByID() error {
+
+	in := k.SetRecordFields()
+
+	md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	switch k.Record.RecordType {
+	case models.Credentials:
+	case models.Card:
+	case models.File:
+
+	}
+
+	_, err := k.KeeperClient.UpdateRecordByID(ctx, in)
+	if err != nil {
+		return err
+	}
+
+	k.CleanRecordFields()
+
+	return nil
+}
+
 //
 //func (k *KeeperServiceClient) DeleteRecordByID(ctx context.Context, in *interface{}, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 //
@@ -143,7 +164,7 @@ func (k *KeeperServiceClient) CheckChanges() error {
 
 	in := &pb.Record{
 		RecordType: models.Credentials,
-		CreatedAt:  k.Auth.LastChanges,
+		CreatedAt:  k.Auth.LastChangesTime,
 	}
 
 	credentials, err := k.KeeperClient.CheckChanges(ctx, in)
@@ -162,7 +183,7 @@ func (k *KeeperServiceClient) CheckChanges() error {
 				CreatedAt:   val.CreatedAt,
 			})
 
-			last, err := time.Parse(models.DefaultLastChangesTime, k.Auth.LastChanges)
+			last, err := time.Parse(models.DefaultLastChangesTime, k.Auth.LastChangesTime)
 			if err != nil {
 				return err
 			}
@@ -171,7 +192,7 @@ func (k *KeeperServiceClient) CheckChanges() error {
 				return err
 			}
 			if now.After(last) {
-				k.Auth.LastChanges = val.CreatedAt
+				k.Auth.LastChangesTime = val.CreatedAt
 			}
 		}
 	}
@@ -193,7 +214,7 @@ func (k *KeeperServiceClient) CheckChanges() error {
 				CreatedAt:   val.CreatedAt,
 			})
 
-			last, err := time.Parse(models.DefaultLastChangesTime, k.Auth.LastChanges)
+			last, err := time.Parse(models.DefaultLastChangesTime, k.Auth.LastChangesTime)
 			if err != nil {
 				return err
 			}
@@ -202,7 +223,7 @@ func (k *KeeperServiceClient) CheckChanges() error {
 				return err
 			}
 			if now.After(last) {
-				k.Auth.LastChanges = val.CreatedAt
+				k.Auth.LastChangesTime = val.CreatedAt
 			}
 		}
 	}

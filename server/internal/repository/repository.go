@@ -9,7 +9,6 @@ import (
 
 	"github.com/RomanIkonnikov93/keeper/server/internal/models"
 	pb "github.com/RomanIkonnikov93/keeper/server/internal/proto"
-
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -298,7 +297,13 @@ func (p *Pool) UpdateByID(ctx context.Context, in *pb.Record) error {
 	switch in.RecordType {
 
 	case models.Credentials:
-		_, err := p.pool.Exec(ctx, models.QueryUpdateCredentials, in.Description, in.Metadata, in.Login, in.Password, in.UserID, in.RecordID)
+
+		sql, args, err := sqlBuilderForCredentials(in)
+		if err != nil {
+			return err
+		}
+
+		_, err = p.pool.Exec(ctx, sql, args...)
 		if err != nil {
 			return err
 		}
@@ -306,7 +311,13 @@ func (p *Pool) UpdateByID(ctx context.Context, in *pb.Record) error {
 		return nil
 
 	case models.Card:
-		_, err := p.pool.Exec(ctx, models.QueryUpdateCard, in.Description, in.Metadata, in.Card, in.UserID, in.RecordID)
+
+		sql, args, err := sqlBuilderForCard(in)
+		if err != nil {
+			return err
+		}
+
+		_, err = p.pool.Exec(ctx, sql, args...)
 		if err != nil {
 			return err
 		}
@@ -314,7 +325,13 @@ func (p *Pool) UpdateByID(ctx context.Context, in *pb.Record) error {
 		return nil
 
 	case models.File:
-		_, err := p.pool.Exec(ctx, models.QueryUpdateFile, in.Description, in.Metadata, in.File, in.UserID, in.RecordID)
+
+		sql, args, err := sqlBuilderForFile(in)
+		if err != nil {
+			return err
+		}
+
+		_, err = p.pool.Exec(ctx, sql, args...)
 		if err != nil {
 			return err
 		}

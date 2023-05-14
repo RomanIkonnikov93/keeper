@@ -11,14 +11,13 @@ func (t *TUI) mainPage(message string) {
 
 	form := tview.NewForm()
 
-	recordTypes := []string{"credentials", "card", "file"}
-
-	form.AddDropDown("Select an option (hit Enter): ", recordTypes, 3, func(option string, optionIndex int) {
-		if optionIndex == 1 {
+	form.AddDropDown("Select an option (hit Enter): ", []string{"credentials", "card", "file"}, -1, func(option string, optionIndex int) {
+		switch option {
+		case "credentials":
 			t.client.Record.RecordType = models.Credentials
-		} else if optionIndex == 2 {
+		case "card":
 			t.client.Record.RecordType = models.Card
-		} else if optionIndex == 3 {
+		case "file":
 			t.client.Record.RecordType = models.File
 		}
 	}).AddButton("Add record", func() {
