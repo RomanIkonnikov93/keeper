@@ -97,15 +97,10 @@ func (t *TUI) mainPage(message string) {
 			return
 		}
 
-		t.client.Record.ActionType = models.Get
-		switch t.client.Record.RecordType {
-		case models.Credentials:
-			t.credentialsPage("")
-		case models.Card:
-			t.cardPage("")
-		case models.File:
-			t.filePage("")
-		}
+		t.client.Record.ActionType = models.GetAll
+
+		t.outputAllPage("")
+
 	}).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Rune() == 113 {
 			t.Application.Stop()

@@ -9,6 +9,15 @@ import (
 
 func CheckCard(card string) (bool, error) {
 
+	if card == "" {
+		return false, models.ErrNotValid
+	}
+
+	str := strings.Split(card, "")
+	if len(str) != 28 {
+		return false, models.ErrNotValid
+	}
+
 	arr := strings.Split(card, ",")
 
 	for i := range arr {

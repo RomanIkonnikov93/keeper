@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/RomanIkonnikov93/keeper/client/internal/models"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"google.golang.org/grpc/codes"
@@ -33,11 +34,13 @@ func (t *TUI) credentialsPage(message string) {
 				err := t.client.AddRecord()
 
 				if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
-					t.authPage("InvalidArgument")
+					t.client.Logger.Error(err)
+					t.mainPage("InvalidArgument")
 					return
 				}
 				if err != nil {
-					t.authPage("Unknown error")
+					t.client.Logger.Error(err)
+					t.mainPage("Unknown error")
 					return
 				}
 
@@ -53,7 +56,47 @@ func (t *TUI) credentialsPage(message string) {
 
 		t.pages.AddPage("credentials", frame, true, true)
 		t.pages.SwitchToPage("credentials")
+
 	case models.Get:
+		form := tview.NewForm().
+			AddInputField("Record ID:", "", 30, nil, func(id string) {
+				res, err := strconv.Atoi(id)
+				if err != nil {
+					t.credentialsPage("invalid id")
+					return
+				}
+				t.client.Record.RecordID = int32(res)
+			}).
+			AddButton("Get", func() {
+
+				err := t.client.GetRecordByID()
+
+				if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
+					t.mainPage("InvalidArgument")
+					return
+				}
+				if errors.Is(err, models.ErrNotExist) {
+					t.mainPage("record not exist")
+					return
+				}
+				if err != nil {
+					t.mainPage("Unknown error")
+					return
+				}
+
+				t.outputPage("OK")
+			}).
+			AddButton("Back", func() {
+				t.mainPage("")
+			})
+
+		frame := tview.NewFrame(form).SetBorders(0, 0, 0, 1, 4, 4).
+			AddText("TAB - for switching between fields | Enter - for select", false, tview.AlignLeft, tcell.ColorWhite).
+			AddText(message, false, tview.AlignRight, tcell.ColorRed)
+
+		t.pages.AddPage("credentials", frame, true, true)
+		t.pages.SwitchToPage("credentials")
+
 	case models.Update:
 		form := tview.NewForm().
 			AddInputField("Record ID:", "", 30, nil, func(id string) {
@@ -81,11 +124,11 @@ func (t *TUI) credentialsPage(message string) {
 				err := t.client.UpdateRecordByID()
 
 				if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
-					t.authPage("InvalidArgument")
+					t.mainPage("InvalidArgument")
 					return
 				}
 				if err != nil {
-					t.authPage("Unknown error")
+					t.mainPage("Unknown error")
 					return
 				}
 
@@ -101,6 +144,41 @@ func (t *TUI) credentialsPage(message string) {
 
 		t.pages.AddPage("credentials", frame, true, true)
 		t.pages.SwitchToPage("credentials")
+
 	case models.Delete:
+		form := tview.NewForm().
+			AddInputField("Record ID:", "", 30, nil, func(id string) {
+				res, err := strconv.Atoi(id)
+				if err != nil {
+					t.credentialsPage("invalid id")
+					return
+				}
+				t.client.Record.RecordID = int32(res)
+			}).
+			AddButton("Delete", func() {
+
+				err := t.client.DeleteRecordByID()
+
+				if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
+					t.mainPage("InvalidArgument")
+					return
+				}
+				if err != nil {
+					t.mainPage("Unknown error")
+					return
+				}
+
+				t.mainPage("OK")
+			}).
+			AddButton("Back", func() {
+				t.mainPage("")
+			})
+
+		frame := tview.NewFrame(form).SetBorders(0, 0, 0, 1, 4, 4).
+			AddText("TAB - for switching between fields | Enter - for select", false, tview.AlignLeft, tcell.ColorWhite).
+			AddText(message, false, tview.AlignRight, tcell.ColorRed)
+
+		t.pages.AddPage("credentials", frame, true, true)
+		t.pages.SwitchToPage("credentials")
 	}
 }

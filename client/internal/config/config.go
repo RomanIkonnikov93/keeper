@@ -10,8 +10,7 @@ import (
 // Config for launching an application.
 type Config struct {
 	ServerAddress     string `env:"KEEPER_SERVER_ADDRESS" envDefault:":3200"`
-	DownloadFilesPath string `env:"KEEPER_SERVER_ADDRESS" envDefault:"/keeper/download"`
-	UploadFilesPath   string `env:"KEEPER_SERVER_ADDRESS" envDefault:"/keeper/upload/"`
+	DownloadFilesPath string `env:"KEEPER_DOWNLOAD_FILES_PATH" envDefault:"/keeper/download/"`
 }
 
 // GetConfig creates a new configuration.

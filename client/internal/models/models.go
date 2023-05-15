@@ -2,6 +2,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 )
 
@@ -9,10 +10,13 @@ var (
 	BuildVersion = "1.0"
 )
 
+var ErrNotExist = errors.New("not exist")
+
 // Possible actions with a Record.
 const (
 	Add    = "add"
 	Get    = "get"
+	GetAll = "getAll"
 	Update = "update"
 	Delete = "delete"
 )
@@ -48,12 +52,13 @@ type Record struct {
 	Password    string
 	Card        string
 	File        []byte
+	FilePath    string
 	CreatedAt   string
 	ActionType  string
 }
 
 // Storage struct for temporary storage of all user records (not including binary data).
 type Storage struct {
-	Credentials []Record
-	Cards       []Record
+	Credentials map[int32]Record
+	Cards       map[int32]Record
 }

@@ -46,10 +46,12 @@ func (t *TUI) StartScanningChanges() {
 			if t.client.Auth.Token != "" {
 				err := t.client.CheckChanges()
 				if errors.Is(err, status.Error(codes.Unauthenticated, "")) {
+					t.client.Logger.Error(err)
 					t.authPage("Unauthenticated")
 					return
 				}
 				if err != nil {
+					t.client.Logger.Error(err)
 					t.authPage("Unknown error")
 					return
 				}
@@ -66,10 +68,12 @@ func (t *TUI) StartScanningChanges() {
 				if t.client.Auth.Token != "" {
 					err := t.client.CheckChanges()
 					if errors.Is(err, status.Error(codes.Unauthenticated, "")) {
+						t.client.Logger.Error(err)
 						t.authPage("Unauthenticated")
 						return
 					}
 					if err != nil {
+						t.client.Logger.Error(err)
 						t.authPage("Unknown error")
 						return
 					}

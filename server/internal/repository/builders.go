@@ -26,7 +26,7 @@ func sqlBuilderForCredentials(in *pb.Record) (string, []interface{}, error) {
 		builder = builder.Set("user_password", in.Password)
 	}
 
-	builder = builder.Where(sq.Eq{"user_id": in.UserID, "record_id": in.RecordID})
+	builder = builder.Where(sq.Eq{"user_id": in.UserID, "record_id": in.RecordID, "del_flag": false})
 
 	sql, args, err := builder.ToSql()
 	if err != nil {
@@ -52,7 +52,7 @@ func sqlBuilderForCard(in *pb.Record) (string, []interface{}, error) {
 		builder = builder.Set("user_card", in.Card)
 	}
 
-	builder = builder.Where(sq.Eq{"user_id": in.UserID, "record_id": in.RecordID})
+	builder = builder.Where(sq.Eq{"user_id": in.UserID, "record_id": in.RecordID, "del_flag": false})
 
 	sql, args, err := builder.ToSql()
 	if err != nil {
@@ -78,7 +78,7 @@ func sqlBuilderForFile(in *pb.Record) (string, []interface{}, error) {
 		builder = builder.Set("user_file", in.File)
 	}
 
-	builder = builder.Where(sq.Eq{"user_id": in.UserID, "record_id": in.RecordID})
+	builder = builder.Where(sq.Eq{"user_id": in.UserID, "record_id": in.RecordID, "del_flag": false})
 
 	sql, args, err := builder.ToSql()
 	if err != nil {
