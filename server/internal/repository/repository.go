@@ -1,4 +1,3 @@
-// Package repository contains storage options for links and short links.
 package repository
 
 import (
@@ -9,6 +8,7 @@ import (
 
 	"github.com/RomanIkonnikov93/keeper/server/internal/models"
 	pb "github.com/RomanIkonnikov93/keeper/server/internal/proto"
+
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -16,11 +16,10 @@ import (
 // Repository interface for repository methods.
 type Repository interface {
 	Add(ctx context.Context, record *pb.Record) error
-	Get(ctx context.Context, in *pb.Record) (*pb.Record, error)
-	GetAllByType(ctx context.Context, in *pb.Record) ([]models.Record, error)
+	GetByID(ctx context.Context, in *pb.Record) (*pb.Record, error)
 	UpdateByID(ctx context.Context, in *pb.Record) error
 	DeleteByID(ctx context.Context, in *pb.Record) error
-	CheckChanges(ctx context.Context, in *pb.Record) ([]models.Record, error)
+	Check(ctx context.Context, in *pb.Record) ([]models.Record, error)
 }
 
 // Pool struct for postgresql connection.
@@ -57,7 +56,7 @@ func NewPGRepository(pool *pgxpool.Pool) (*Pool, error) {
 	return p, nil
 }
 
-// Add
+// Add adds a new record to the database.
 func (p *Pool) Add(ctx context.Context, in *pb.Record) error {
 
 	switch in.RecordType {
@@ -110,8 +109,8 @@ func (p *Pool) Add(ctx context.Context, in *pb.Record) error {
 	}
 }
 
-// Get
-func (p *Pool) Get(ctx context.Context, in *pb.Record) (*pb.Record, error) {
+// GetByID gets the record from the database.
+func (p *Pool) GetByID(ctx context.Context, in *pb.Record) (*pb.Record, error) {
 
 	var (
 		createdAt time.Time
@@ -183,115 +182,7 @@ func (p *Pool) Get(ctx context.Context, in *pb.Record) (*pb.Record, error) {
 	}
 }
 
-// GetAllByType
-func (p *Pool) GetAllByType(ctx context.Context, in *pb.Record) ([]models.Record, error) {
-
-	var (
-		createdAt time.Time
-	)
-
-	out := make([]models.Record, 0)
-
-	switch in.RecordType {
-
-	case models.Credentials:
-		rows, err := p.pool.Query(ctx, models.QueryGetAllCredentials, in.UserID)
-		if err != nil {
-			return nil, err
-		}
-
-		for rows.Next() {
-
-			if err = rows.Scan(&in.RecordID, &in.Description, &in.Metadata, &in.Login, &in.Password, &createdAt); err != nil {
-				return nil, err
-			}
-
-			record := models.Record{
-				RecordID:    in.RecordID,
-				RecordType:  in.RecordType,
-				Description: in.Description,
-				Metadata:    in.Metadata,
-				Login:       in.Login,
-				Password:    in.Password,
-				CreatedAt:   createdAt.Format(models.TimeFormat),
-			}
-
-			out = append(out, record)
-		}
-
-		if len(out) < 1 {
-			return nil, models.ErrNotExist
-		}
-
-		return out, nil
-
-	case models.Card:
-		rows, err := p.pool.Query(ctx, models.QueryGetAllCard, in.UserID)
-		if err != nil {
-			return nil, err
-		}
-
-		for rows.Next() {
-
-			if err = rows.Scan(&in.RecordID, &in.Description, &in.Metadata, &in.Card, &createdAt); err != nil {
-				return nil, err
-			}
-
-			record := models.Record{
-				RecordID:    in.RecordID,
-				RecordType:  in.RecordType,
-				Description: in.Description,
-				Metadata:    in.Metadata,
-				Card:        in.Card,
-				CreatedAt:   createdAt.Format(models.TimeFormat),
-			}
-
-			out = append(out, record)
-		}
-
-		if len(out) < 1 {
-			return nil, models.ErrNotExist
-		}
-
-		return out, nil
-
-	case models.File:
-		rows, err := p.pool.Query(ctx, models.QueryGetAllFile, in.UserID)
-		if err != nil {
-			return nil, err
-		}
-
-		for rows.Next() {
-
-			if err = rows.Scan(&in.RecordID, &in.Description, &in.Metadata, &in.File, &createdAt); err != nil {
-				return nil, err
-			}
-
-			record := models.Record{
-				RecordID:    in.RecordID,
-				RecordType:  in.RecordType,
-				Description: in.Description,
-				Metadata:    in.Metadata,
-				File:        in.File,
-				CreatedAt:   createdAt.Format(models.TimeFormat),
-			}
-
-			out = append(out, record)
-		}
-
-		if len(out) < 1 {
-			return nil, models.ErrNotExist
-		}
-
-		return out, nil
-
-	default:
-
-		return nil, models.ErrInvalidData
-	}
-}
-
-// UpdateByID
+// UpdateByID updates the record in the database.
 func (p *Pool) UpdateByID(ctx context.Context, in *pb.Record) error {
 
 	switch in.RecordType {
@@ -344,7 +235,7 @@ func (p *Pool) UpdateByID(ctx context.Context, in *pb.Record) error {
 	}
 }
 
-// DeleteByID
+// DeleteByID changes the status of a record in the database to: deleted.
 func (p *Pool) DeleteByID(ctx context.Context, in *pb.Record) error {
 
 	query := "update " + in.RecordType + " set del_flag=true where user_id=$1 and record_id = $2"
@@ -357,7 +248,8 @@ func (p *Pool) DeleteByID(ctx context.Context, in *pb.Record) error {
 	return nil
 }
 
-func (p *Pool) CheckChanges(ctx context.Context, in *pb.Record) ([]models.Record, error) {
+// Check scans the database for new or changed records, depending on the last modification time (stored on the client).
+func (p *Pool) Check(ctx context.Context, in *pb.Record) ([]models.Record, error) {
 
 	var (
 		createdAt time.Time
@@ -421,6 +313,35 @@ func (p *Pool) CheckChanges(ctx context.Context, in *pb.Record) ([]models.Record
 				Description: in.Description,
 				Metadata:    in.Metadata,
 				Card:        in.Card,
+				CreatedAt:   createdAt.Format(models.TimeFormat),
+			}
+
+			out = append(out, record)
+		}
+
+		if len(out) < 1 {
+			return nil, models.ErrNotExist
+		}
+
+		return out, nil
+
+	case models.File:
+		rows, err := p.pool.Query(ctx, models.QueryCheckChangesFile, in.UserID, timeOfCreation)
+		if err != nil {
+			return nil, err
+		}
+
+		for rows.Next() {
+
+			if err = rows.Scan(&in.RecordID, &in.Description, &in.Metadata, &createdAt); err != nil {
+				return nil, err
+			}
+
+			record := models.Record{
+				RecordID:    in.RecordID,
+				RecordType:  in.RecordType,
+				Description: in.Description,
+				Metadata:    in.Metadata,
 				CreatedAt:   createdAt.Format(models.TimeFormat),
 			}
 

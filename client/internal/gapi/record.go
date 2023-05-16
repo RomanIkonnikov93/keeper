@@ -13,7 +13,6 @@ func (k *KeeperServiceClient) SetRecordFields() *pb.Record {
 		Login:       k.Record.Login,
 		Password:    k.Record.Password,
 		Card:        k.Record.Card,
-		File:        k.Record.File,
 	}
 }
 
@@ -27,5 +26,6 @@ func (k *KeeperServiceClient) CleanRecordFields() {
 	k.Record.Password = ""
 	k.Record.Card = ""
 	k.Record.File = nil
+	k.Record.FilePath = ""
 	k.Record.ActionType = ""
 }

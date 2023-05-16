@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// generateRandom
+// generateRandom func for Encrypt.
 func generateRandom(size int) ([]byte, error) {
 	b := make([]byte, size)
 	_, err := rand.Read(b)
@@ -19,7 +19,7 @@ func generateRandom(size int) ([]byte, error) {
 	return b, nil
 }
 
-// Encrypt in AES.
+// Encrypt data in AES.
 func Encrypt(src, key []byte) (string, error) {
 
 	aesblock, err := aes.NewCipher(key)
@@ -44,6 +44,7 @@ func Encrypt(src, key []byte) (string, error) {
 	return encryptedStr, nil
 }
 
+// Decrypt data from AES.
 func Decrypt(encrypted string, key []byte) ([]byte, error) {
 
 	arr := strings.Split(encrypted, ",")
@@ -69,7 +70,7 @@ func Decrypt(encrypted string, key []byte) ([]byte, error) {
 	return result, nil
 }
 
-// CheckPasswordDecrypt
+// CheckPasswordDecrypt checks the validity of the password.
 func CheckPasswordDecrypt(incomingPass, encryptedPass string, key []byte) (bool, error) {
 
 	result, err := Decrypt(encryptedPass, key)

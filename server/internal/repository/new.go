@@ -13,7 +13,7 @@ type Reps struct {
 	Ping    Pinger
 }
 
-// NewReps creates new repositories and selects their type.
+// NewReps creates new repositories.
 func NewReps(cfg config.Config) (*Reps, error) {
 
 	R := Reps{}

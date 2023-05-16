@@ -5,12 +5,14 @@ import (
 	"strconv"
 
 	"github.com/RomanIkonnikov93/keeper/client/internal/models"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+// filePage switches to file page.
 func (t *TUI) filePage(message string) {
 
 	switch t.client.Record.ActionType {
@@ -19,10 +21,8 @@ func (t *TUI) filePage(message string) {
 			AddInputField("Decryption:", "", 30, nil, func(description string) {
 				t.client.Record.Description = description
 			}).
-			AddInputField("Metadata:", "", 30, nil, func(metadata string) {
-				t.client.Record.Metadata = metadata
-			}).
-			AddInputField("File path:", "", 100, nil, func(path string) {
+			AddTextView("", "Max file size: 2Mb", 100, 1, true, false).
+			AddInputField("File path:", "", 60, nil, func(path string) {
 				t.client.Record.FilePath = path
 			}).
 			AddButton("Add", func() {
@@ -30,12 +30,14 @@ func (t *TUI) filePage(message string) {
 				err := t.client.AddRecord()
 
 				if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
-					t.client.Logger.Error(err)
 					t.mainPage("InvalidArgument")
 					return
 				}
+				if errors.Is(err, models.ErrMaxFileSize) {
+					t.mainPage("file size exceeded")
+					return
+				}
 				if err != nil {
-					t.client.Logger.Error(err)
 					t.mainPage("Unknown error")
 					return
 				}
@@ -62,6 +64,10 @@ func (t *TUI) filePage(message string) {
 					return
 				}
 				t.client.Record.RecordID = int32(res)
+			}).
+			AddTextView("Default path:", t.client.Cfg.DownloadFilesPath, 100, 1, true, false).
+			AddInputField("Set download path:", "", 60, nil, func(path string) {
+				t.client.Record.FilePath = path
 			}).
 			AddButton("Get", func() {
 
@@ -106,10 +112,8 @@ func (t *TUI) filePage(message string) {
 			AddInputField("Decryption:", "", 30, nil, func(description string) {
 				t.client.Record.Description = description
 			}).
-			AddInputField("Metadata:", "", 30, nil, func(metadata string) {
-				t.client.Record.Metadata = metadata
-			}).
-			AddInputField("File path:", "", 100, nil, func(path string) {
+			AddTextView("", "Max file size: 2Mb", 100, 1, true, false).
+			AddInputField("File path:", "", 60, nil, func(path string) {
 				t.client.Record.FilePath = path
 			}).
 			AddButton("Update", func() {
@@ -118,6 +122,10 @@ func (t *TUI) filePage(message string) {
 
 				if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
 					t.mainPage("InvalidArgument")
+					return
+				}
+				if errors.Is(err, models.ErrMaxFileSize) {
+					t.mainPage("file size exceeded")
 					return
 				}
 				if err != nil {

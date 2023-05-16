@@ -7,6 +7,7 @@ import (
 	"github.com/RomanIkonnikov93/keeper/server/internal/models"
 )
 
+// CheckCard custom bank card data validator.
 func CheckCard(card string) (bool, error) {
 
 	if card == "" {

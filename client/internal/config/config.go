@@ -1,4 +1,3 @@
-// Package config contains environment variables.
 package config
 
 import (
@@ -10,7 +9,7 @@ import (
 // Config for launching an application.
 type Config struct {
 	ServerAddress     string `env:"KEEPER_SERVER_ADDRESS" envDefault:":3200"`
-	DownloadFilesPath string `env:"KEEPER_DOWNLOAD_FILES_PATH" envDefault:"/keeper/download/"`
+	DownloadFilesPath string `env:"KEEPER_DOWNLOAD_FILES_PATH" envDefault:""`
 }
 
 // GetConfig creates a new configuration.
@@ -20,8 +19,7 @@ func GetConfig() (*Config, error) {
 
 	// flags
 	flag.StringVar(&cfg.ServerAddress, "s", cfg.ServerAddress, "KEEPER_SERVER_ADDRESS")
-	flag.StringVar(&cfg.ServerAddress, "d", cfg.ServerAddress, "KEEPER_SERVER_ADDRESS")
-	flag.StringVar(&cfg.ServerAddress, "u", cfg.ServerAddress, "KEEPER_SERVER_ADDRESS")
+	flag.StringVar(&cfg.ServerAddress, "d", cfg.ServerAddress, "KEEPER_DOWNLOAD_FILES_PATH")
 	flag.Parse()
 
 	err := env.Parse(cfg)

@@ -1,4 +1,3 @@
-// Package models contains project data structures.
 package models
 
 import (
@@ -10,7 +9,10 @@ var (
 	BuildVersion = "1.0"
 )
 
-var ErrNotExist = errors.New("not exist")
+var (
+	ErrNotExist    = errors.New("not exist")
+	ErrMaxFileSize = errors.New("file size exceeded")
+)
 
 // Possible actions with a Record.
 const (
@@ -61,4 +63,5 @@ type Record struct {
 type Storage struct {
 	Credentials map[int32]Record
 	Cards       map[int32]Record
+	FileInfo    map[int32]Record
 }

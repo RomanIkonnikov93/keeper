@@ -39,6 +39,7 @@ func InitServices(rep repository.Reps, cfg config.Config, logger *logging.Logger
 	}
 }
 
+// RegistrationUser registers a new user and assigns a unique ID to him.
 func (k *KeeperServiceServer) RegistrationUser(ctx context.Context, in *pb.Auth) (*pb.Auth, error) {
 
 	out := &pb.Auth{}
@@ -76,6 +77,7 @@ func (k *KeeperServiceServer) RegistrationUser(ctx context.Context, in *pb.Auth)
 	return out, nil
 }
 
+// LoginUser authorizes and identifies users.
 func (k *KeeperServiceServer) LoginUser(ctx context.Context, in *pb.Auth) (*pb.Auth, error) {
 
 	out := &pb.Auth{}
@@ -85,7 +87,7 @@ func (k *KeeperServiceServer) LoginUser(ctx context.Context, in *pb.Auth) (*pb.A
 		return nil, status.Error(codes.InvalidArgument, "")
 	}
 
-	encryptedPass, ID, err := k.user.CheckUser(ctx, in.UserLogin, in.UserPassword)
+	encryptedPass, ID, err := k.user.GetUser(ctx, in.UserLogin, in.UserPassword)
 	if errors.Is(err, models.ErrNotExist) {
 		k.logger.Error(models.ErrNotExist)
 		return nil, status.Error(codes.NotFound, "")
@@ -115,6 +117,7 @@ func (k *KeeperServiceServer) LoginUser(ctx context.Context, in *pb.Auth) (*pb.A
 	return out, nil
 }
 
+// AddRecord adds a new record to the database.
 func (k *KeeperServiceServer) AddRecord(ctx context.Context, in *pb.Record) (*emptypb.Empty, error) {
 
 	out := &emptypb.Empty{}
@@ -180,6 +183,7 @@ func (k *KeeperServiceServer) AddRecord(ctx context.Context, in *pb.Record) (*em
 	return out, nil
 }
 
+// GetRecordByID gets the record from the database.
 func (k *KeeperServiceServer) GetRecordByID(ctx context.Context, in *pb.Record) (*pb.Record, error) {
 
 	out := &pb.Record{}
@@ -200,7 +204,7 @@ func (k *KeeperServiceServer) GetRecordByID(ctx context.Context, in *pb.Record) 
 	switch in.RecordType {
 	case models.Credentials:
 
-		out, err = k.rep.Get(ctx, in)
+		out, err = k.rep.GetByID(ctx, in)
 		if err != nil {
 			k.logger.Error(err)
 			return nil, err
@@ -216,7 +220,7 @@ func (k *KeeperServiceServer) GetRecordByID(ctx context.Context, in *pb.Record) 
 
 	case models.Card:
 
-		out, err = k.rep.Get(ctx, in)
+		out, err = k.rep.GetByID(ctx, in)
 		if err != nil {
 			k.logger.Error(err)
 			return nil, err
@@ -232,7 +236,7 @@ func (k *KeeperServiceServer) GetRecordByID(ctx context.Context, in *pb.Record) 
 
 	case models.File:
 
-		out, err = k.rep.Get(ctx, in)
+		out, err = k.rep.GetByID(ctx, in)
 		if err != nil {
 			k.logger.Error(err)
 			return nil, err
@@ -246,90 +250,7 @@ func (k *KeeperServiceServer) GetRecordByID(ctx context.Context, in *pb.Record) 
 	return out, nil
 }
 
-func (k *KeeperServiceServer) GetAllRecordsByType(ctx context.Context, in *pb.Record) (*pb.List, error) {
-
-	out := &pb.List{}
-
-	ID, err := authjwt.UserTokenValidation(ctx, k.cfg.JWTSecretKey)
-	if err != nil {
-		k.logger.Error(err)
-		return nil, status.Error(codes.Unauthenticated, "")
-	}
-
-	in.UserID = ID
-
-	switch in.RecordType {
-	case models.Credentials:
-	case models.Card:
-	case models.File:
-	default:
-		k.logger.Error(status.Error(codes.InvalidArgument, ""))
-		return nil, status.Error(codes.InvalidArgument, "")
-	}
-
-	data, err := k.rep.GetAllByType(ctx, in)
-	if err != nil {
-		k.logger.Error(err)
-		return nil, err
-	}
-
-	for _, val := range data {
-		switch val.RecordType {
-		case models.Credentials:
-
-			password, err := crypt.Decrypt(val.Password, []byte(k.cfg.SecretKey))
-			if err != nil {
-				k.logger.Error(err)
-				return nil, err
-			}
-
-			out.Note = append(out.Note, &pb.Record{
-				RecordID:    val.RecordID,
-				RecordType:  val.RecordType,
-				Description: val.Description,
-				Metadata:    val.Metadata,
-				Login:       val.Login,
-				Password:    string(password),
-				CreatedAt:   val.CreatedAt,
-			})
-
-		case models.Card:
-
-			card, err := crypt.Decrypt(val.Card, []byte(k.cfg.SecretKey))
-			if err != nil {
-				k.logger.Error(err)
-				return nil, err
-			}
-
-			out.Note = append(out.Note, &pb.Record{
-				RecordID:    val.RecordID,
-				RecordType:  val.RecordType,
-				Description: val.Description,
-				Metadata:    val.Metadata,
-				Card:        string(card),
-				CreatedAt:   val.CreatedAt,
-			})
-
-		case models.File:
-
-			out.Note = append(out.Note, &pb.Record{
-				RecordID:    val.RecordID,
-				RecordType:  val.RecordType,
-				Description: val.Description,
-				Metadata:    val.Metadata,
-				File:        val.File,
-				CreatedAt:   val.CreatedAt,
-			})
-
-		default:
-			k.logger.Error(status.Error(codes.InvalidArgument, ""))
-			return nil, status.Error(codes.InvalidArgument, "")
-		}
-	}
-
-	return out, nil
-}
-
+// UpdateRecordByID updates the record in the database.
 func (k *KeeperServiceServer) UpdateRecordByID(ctx context.Context, in *pb.Record) (*emptypb.Empty, error) {
 
 	out := &emptypb.Empty{}
@@ -393,6 +314,7 @@ func (k *KeeperServiceServer) UpdateRecordByID(ctx context.Context, in *pb.Recor
 	return out, nil
 }
 
+// DeleteRecordByID changes the status of a record in the database to: deleted.
 func (k *KeeperServiceServer) DeleteRecordByID(ctx context.Context, in *pb.Record) (*emptypb.Empty, error) {
 
 	out := &emptypb.Empty{}
@@ -428,18 +350,7 @@ func (k *KeeperServiceServer) DeleteRecordByID(ctx context.Context, in *pb.Recor
 	return out, nil
 }
 
-func (k *KeeperServiceServer) Ping(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
-
-	out := &emptypb.Empty{}
-
-	err := k.ping.PingDB()
-	if err != nil {
-		k.logger.Error(err)
-		return nil, err
-	}
-	return out, nil
-}
-
+// CheckChanges scans the database for new or changed records, depending on the last modification time (stored on the client).
 func (k *KeeperServiceServer) CheckChanges(ctx context.Context, in *pb.Record) (*pb.List, error) {
 
 	out := &pb.List{}
@@ -455,12 +366,13 @@ func (k *KeeperServiceServer) CheckChanges(ctx context.Context, in *pb.Record) (
 	switch in.RecordType {
 	case models.Credentials:
 	case models.Card:
+	case models.File:
 	default:
 		k.logger.Error(status.Error(codes.InvalidArgument, ""))
 		return nil, status.Error(codes.InvalidArgument, "")
 	}
 
-	data, err := k.rep.CheckChanges(ctx, in)
+	data, err := k.rep.Check(ctx, in)
 	if errors.Is(err, models.ErrNotExist) {
 		k.logger.Error(err)
 		return nil, status.Error(codes.NotFound, "")
@@ -507,11 +419,34 @@ func (k *KeeperServiceServer) CheckChanges(ctx context.Context, in *pb.Record) (
 				CreatedAt:   val.CreatedAt,
 			})
 
+		case models.File:
+
+			out.Note = append(out.Note, &pb.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				CreatedAt:   val.CreatedAt,
+			})
+
 		default:
 			k.logger.Error(status.Error(codes.InvalidArgument, ""))
 			return nil, status.Error(codes.InvalidArgument, "")
 		}
 	}
 
+	return out, nil
+}
+
+// Ping checks the database connection.
+func (k *KeeperServiceServer) Ping(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+
+	out := &emptypb.Empty{}
+
+	err := k.ping.PingDB()
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
 	return out, nil
 }

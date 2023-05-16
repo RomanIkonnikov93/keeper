@@ -8,17 +8,15 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// Pinger for ping data base.
 type Pinger interface {
 	PingDB() error
 }
 
-// Ping for ping data base.
 type Ping struct {
 	pool *pgxpool.Pool
 }
 
-// NewPing for ping data base.
+// NewPing creates new database connection and return new Ping struct.
 func NewPing(cfg config.Config) (*Ping, error) {
 
 	pool := conn.NewConnection(cfg)
@@ -28,7 +26,7 @@ func NewPing(cfg config.Config) (*Ping, error) {
 	}, nil
 }
 
-// PingDB for ping data base.
+// PingDB checks the database connection.
 func (p *Ping) PingDB() error {
 
 	pool := p.pool

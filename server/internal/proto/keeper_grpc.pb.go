@@ -20,15 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Keeper_RegistrationUser_FullMethodName    = "/keeper.Keeper/RegistrationUser"
-	Keeper_LoginUser_FullMethodName           = "/keeper.Keeper/LoginUser"
-	Keeper_AddRecord_FullMethodName           = "/keeper.Keeper/AddRecord"
-	Keeper_GetRecordByID_FullMethodName       = "/keeper.Keeper/GetRecordByID"
-	Keeper_GetAllRecordsByType_FullMethodName = "/keeper.Keeper/GetAllRecordsByType"
-	Keeper_UpdateRecordByID_FullMethodName    = "/keeper.Keeper/UpdateRecordByID"
-	Keeper_DeleteRecordByID_FullMethodName    = "/keeper.Keeper/DeleteRecordByID"
-	Keeper_Ping_FullMethodName                = "/keeper.Keeper/Ping"
-	Keeper_CheckChanges_FullMethodName        = "/keeper.Keeper/CheckChanges"
+	Keeper_RegistrationUser_FullMethodName = "/keeper.Keeper/RegistrationUser"
+	Keeper_LoginUser_FullMethodName        = "/keeper.Keeper/LoginUser"
+	Keeper_AddRecord_FullMethodName        = "/keeper.Keeper/AddRecord"
+	Keeper_GetRecordByID_FullMethodName    = "/keeper.Keeper/GetRecordByID"
+	Keeper_UpdateRecordByID_FullMethodName = "/keeper.Keeper/UpdateRecordByID"
+	Keeper_DeleteRecordByID_FullMethodName = "/keeper.Keeper/DeleteRecordByID"
+	Keeper_Ping_FullMethodName             = "/keeper.Keeper/Ping"
+	Keeper_CheckChanges_FullMethodName     = "/keeper.Keeper/CheckChanges"
 )
 
 // KeeperClient is the client API for Keeper service.
@@ -39,7 +38,6 @@ type KeeperClient interface {
 	LoginUser(ctx context.Context, in *Auth, opts ...grpc.CallOption) (*Auth, error)
 	AddRecord(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*Record, error)
-	GetAllRecordsByType(ctx context.Context, in *Record, opts ...grpc.CallOption) (*List, error)
 	UpdateRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -90,15 +88,6 @@ func (c *keeperClient) GetRecordByID(ctx context.Context, in *Record, opts ...gr
 	return out, nil
 }
 
-func (c *keeperClient) GetAllRecordsByType(ctx context.Context, in *Record, opts ...grpc.CallOption) (*List, error) {
-	out := new(List)
-	err := c.cc.Invoke(ctx, Keeper_GetAllRecordsByType_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *keeperClient) UpdateRecordByID(ctx context.Context, in *Record, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Keeper_UpdateRecordByID_FullMethodName, in, out, opts...)
@@ -143,7 +132,6 @@ type KeeperServer interface {
 	LoginUser(context.Context, *Auth) (*Auth, error)
 	AddRecord(context.Context, *Record) (*emptypb.Empty, error)
 	GetRecordByID(context.Context, *Record) (*Record, error)
-	GetAllRecordsByType(context.Context, *Record) (*List, error)
 	UpdateRecordByID(context.Context, *Record) (*emptypb.Empty, error)
 	DeleteRecordByID(context.Context, *Record) (*emptypb.Empty, error)
 	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
@@ -167,9 +155,6 @@ func (UnimplementedKeeperServer) AddRecord(context.Context, *Record) (*emptypb.E
 func (UnimplementedKeeperServer) GetRecordByID(context.Context, *Record) (*Record, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecordByID not implemented")
 }
-func (UnimplementedKeeperServer) GetAllRecordsByType(context.Context, *Record) (*List, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllRecordsByType not implemented")
-}
 func (UnimplementedKeeperServer) UpdateRecordByID(context.Context, *Record) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRecordByID not implemented")
 }
@@ -180,7 +165,7 @@ func (UnimplementedKeeperServer) Ping(context.Context, *emptypb.Empty) (*emptypb
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedKeeperServer) CheckChanges(context.Context, *Record) (*List, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckChanges not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method Check not implemented")
 }
 func (UnimplementedKeeperServer) mustEmbedUnimplementedKeeperServer() {}
 
@@ -263,24 +248,6 @@ func _Keeper_GetRecordByID_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KeeperServer).GetRecordByID(ctx, req.(*Record))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Keeper_GetAllRecordsByType_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Record)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KeeperServer).GetAllRecordsByType(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Keeper_GetAllRecordsByType_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).GetAllRecordsByType(ctx, req.(*Record))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -379,10 +346,6 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRecordByID",
 			Handler:    _Keeper_GetRecordByID_Handler,
-		},
-		{
-			MethodName: "GetAllRecordsByType",
-			Handler:    _Keeper_GetAllRecordsByType_Handler,
 		},
 		{
 			MethodName: "UpdateRecordByID",

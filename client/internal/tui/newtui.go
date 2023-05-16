@@ -12,12 +12,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// TUI is a struct for terminal user interface.
 type TUI struct {
 	*tview.Application
 	pages  *tview.Pages
 	client *gapi.KeeperServiceClient
 }
 
+// NewTUI gets new terminal user interface for client.
 func NewTUI(client *gapi.KeeperServiceClient) *TUI {
 
 	app := tview.NewApplication()
@@ -38,6 +40,7 @@ func NewTUI(client *gapi.KeeperServiceClient) *TUI {
 	return t
 }
 
+// StartScanningChanges starts a loop to check for new records on the server.
 func (t *TUI) StartScanningChanges() {
 
 	// Goroutine for first scan.

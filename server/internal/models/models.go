@@ -1,4 +1,3 @@
-// Package models contains project data structures.
 package models
 
 import (
@@ -27,6 +26,7 @@ const (
 	File        = "users_files"
 )
 
+// Record structure for writing incoming user data.
 type Record struct {
 	RecordID    int32
 	RecordType  string
@@ -39,7 +39,7 @@ type Record struct {
 	CreatedAt   string
 }
 
-// Query for repository.
+// Queries for repository.
 var (
 	QueryAddCredentials = `insert into users_credentials (user_id,description,metadata,user_login,user_password) values ($1, $2, $3, $4, $5)`
 	QueryAddCard        = `insert into users_cards (user_id,description,metadata,user_card) values ($1, $2, $3, $4)`
@@ -49,10 +49,7 @@ var (
 	QueryGetCard        = `select description, metadata, user_card, del_flag, created_at from users_cards where user_id = $1 and record_id = $2`
 	QueryGetFile        = `select description, metadata, user_file, del_flag, created_at from users_files where user_id = $1 and record_id = $2`
 
-	QueryGetAllCredentials = `select record_id, description, metadata, user_login, user_password, created_at from users_credentials where user_id = $1 and del_flag = false`
-	QueryGetAllCard        = `select record_id, description, metadata, user_card, created_at from users_cards where user_id = $1 and del_flag = false`
-	QueryGetAllFile        = `select record_id, description, metadata, user_file, created_at from users_files where user_id = $1 and del_flag = false`
-
 	QueryCheckChangesCredentials = `select record_id, description, metadata, user_login, user_password, created_at from users_credentials where user_id = $1 and del_flag = false and created_at > $2`
 	QueryCheckChangesCard        = `select record_id, description, metadata, user_card, created_at from users_cards where user_id = $1 and del_flag = false and created_at > $2`
+	QueryCheckChangesFile        = `select record_id, description, metadata, created_at from users_files where user_id = $1 and del_flag = false and created_at > $2`
 )

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// authPage switches to authentication page, where user can log in or register.
 func (t *TUI) authPage(message string) {
 
 	form := tview.NewForm().
@@ -26,17 +27,14 @@ func (t *TUI) authPage(message string) {
 			err := t.client.RegistrationUser()
 
 			if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
-				t.client.Logger.Error(err)
 				t.authPage("InvalidArgument")
 				return
 			}
 			if errors.Is(err, status.Error(codes.AlreadyExists, "")) {
-				t.client.Logger.Error(err)
 				t.authPage("AlreadyExists")
 				return
 			}
 			if err != nil {
-				t.client.Logger.Error(err)
 				t.authPage("Unknown error")
 				return
 			}
@@ -48,17 +46,14 @@ func (t *TUI) authPage(message string) {
 			err := t.client.LoginUser()
 
 			if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
-				t.client.Logger.Error(err)
 				t.authPage("InvalidArgument")
 				return
 			}
 			if errors.Is(err, status.Error(codes.AlreadyExists, "")) {
-				t.client.Logger.Error(err)
 				t.authPage("AlreadyExists")
 				return
 			}
 			if err != nil {
-				t.client.Logger.Error(err)
 				t.authPage("Unknown error")
 				return
 			}

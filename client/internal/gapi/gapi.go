@@ -3,6 +3,8 @@ package gapi
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -10,6 +12,8 @@ import (
 	"github.com/RomanIkonnikov93/keeper/client/internal/models"
 	pb "github.com/RomanIkonnikov93/keeper/client/internal/proto"
 	"github.com/RomanIkonnikov93/keeper/client/pkg/logging"
+
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,7 +27,7 @@ type KeeperServiceClient struct {
 	Record models.Record
 	Store  models.Storage
 	Mutex  *sync.RWMutex
-	cfg    config.Config
+	Cfg    config.Config
 	Logger logging.Logger
 }
 
@@ -45,13 +49,15 @@ func InitServices(cfg config.Config, logger *logging.Logger) (*KeeperServiceClie
 		Store: models.Storage{
 			Credentials: make(map[int32]models.Record),
 			Cards:       make(map[int32]models.Record),
+			FileInfo:    make(map[int32]models.Record),
 		},
 		Mutex:  &sync.RWMutex{},
-		cfg:    cfg,
+		Cfg:    cfg,
 		Logger: *logger,
 	}, nil
 }
 
+// RegistrationUser registers a new user and assigns a unique ID to him.
 func (k *KeeperServiceClient) RegistrationUser() error {
 
 	ctx := context.Background()
@@ -72,6 +78,7 @@ func (k *KeeperServiceClient) RegistrationUser() error {
 	return nil
 }
 
+// LoginUser authorizes and identifies users.
 func (k *KeeperServiceClient) LoginUser() error {
 
 	ctx := context.Background()
@@ -92,6 +99,7 @@ func (k *KeeperServiceClient) LoginUser() error {
 	return nil
 }
 
+// AddRecord adds a new record to the database.
 func (k *KeeperServiceClient) AddRecord() error {
 
 	in := k.SetRecordFields()
@@ -100,10 +108,20 @@ func (k *KeeperServiceClient) AddRecord() error {
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
 	switch k.Record.RecordType {
-	case models.Credentials:
-	case models.Card:
 	case models.File:
+		path := filepath.Clean(k.Record.FilePath)
+		file, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		if len(file) > 1024*1024*2 { // 2Mb
+			k.Logger.Error(models.ErrMaxFileSize)
+			return models.ErrMaxFileSize
+		}
+		in.File = file
 
+		fileName := filepath.Base(path)
+		in.Metadata = fileName
 	}
 
 	_, err := k.KeeperClient.AddRecord(ctx, in)
@@ -112,12 +130,10 @@ func (k *KeeperServiceClient) AddRecord() error {
 		return err
 	}
 
-	if in.RecordType == models.Credentials || in.RecordType == models.Card {
-		err = k.CheckChanges()
-		if err != nil {
-			k.Logger.Error(err)
-			return err
-		}
+	err = k.CheckChanges()
+	if err != nil {
+		k.Logger.Error(err)
+		return err
 	}
 
 	k.CleanRecordFields()
@@ -125,6 +141,7 @@ func (k *KeeperServiceClient) AddRecord() error {
 	return nil
 }
 
+// GetRecordByID gets the record from the RAM storage (binary data is requested directly from the server).
 func (k *KeeperServiceClient) GetRecordByID() error {
 
 	switch k.Record.RecordType {
@@ -155,16 +172,49 @@ func (k *KeeperServiceClient) GetRecordByID() error {
 		k.Record = record
 
 	case models.File:
+
+		in := k.SetRecordFields()
+
+		md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
+		ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+		out, err := k.KeeperClient.GetRecordByID(ctx, in)
+		if err != nil {
+			k.Logger.Error(err)
+			return err
+		}
+
+		k.Record.Description = out.Description
+		k.Record.Metadata = out.Metadata
+
+		path := ""
+
+		if k.Record.FilePath != "" {
+			path = k.Record.FilePath + "/" + out.Metadata
+		} else if k.Cfg.DownloadFilesPath != "" {
+			path = k.Cfg.DownloadFilesPath + "/" + out.Metadata
+		} else {
+			dir, err := os.Getwd()
+			if err != nil {
+				k.Logger.Error(err)
+				return err
+			}
+			path = dir + "/" + out.Metadata
+		}
+
+		err = os.WriteFile(filepath.Clean(path), out.File, 0666)
+		if err != nil {
+			k.Logger.Error(err)
+			return err
+		}
+
+		return nil
 	}
 
 	return nil
 }
 
-// func (k *KeeperServiceClient) GetAllRecordsByType(ctx context.Context, in *interface{}, opts ...grpc.CallOption) (*interface{}, error) {
-//
-//		md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
-//		ctx := metadata.NewOutgoingContext(context.Background(), md)
-//	}
+// UpdateRecordByID updates the record in the database.
 func (k *KeeperServiceClient) UpdateRecordByID() error {
 
 	in := k.SetRecordFields()
@@ -173,10 +223,21 @@ func (k *KeeperServiceClient) UpdateRecordByID() error {
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
 	switch k.Record.RecordType {
-	case models.Credentials:
-	case models.Card:
 	case models.File:
+		if k.Record.FilePath != "" {
+			path := filepath.Clean(k.Record.FilePath)
+			file, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			if len(file) > 1024*1024*2 { // 2Mb
+				return models.ErrMaxFileSize
+			}
+			in.File = file
 
+			fileName := filepath.Base(path)
+			in.Metadata = fileName
+		}
 	}
 
 	_, err := k.KeeperClient.UpdateRecordByID(ctx, in)
@@ -185,12 +246,10 @@ func (k *KeeperServiceClient) UpdateRecordByID() error {
 		return err
 	}
 
-	if in.RecordType == models.Credentials || in.RecordType == models.Card {
-		err = k.CheckChanges()
-		if err != nil {
-			k.Logger.Error(err)
-			return err
-		}
+	err = k.CheckChanges()
+	if err != nil {
+		k.Logger.Error(err)
+		return err
 	}
 
 	k.CleanRecordFields()
@@ -198,6 +257,7 @@ func (k *KeeperServiceClient) UpdateRecordByID() error {
 	return nil
 }
 
+// DeleteRecordByID changes the status of a record in the database to: deleted, the record is also deleted from RAM storage.
 func (k *KeeperServiceClient) DeleteRecordByID() error {
 
 	in := k.SetRecordFields()
@@ -226,6 +286,10 @@ func (k *KeeperServiceClient) DeleteRecordByID() error {
 
 	case models.File:
 
+		k.Mutex.Lock()
+		delete(k.Store.FileInfo, in.RecordID)
+		k.Mutex.Unlock()
+
 	}
 
 	k.CleanRecordFields()
@@ -233,11 +297,8 @@ func (k *KeeperServiceClient) DeleteRecordByID() error {
 	return nil
 }
 
-func (k *KeeperServiceClient) Ping() error {
-	//TODO implement me
-	panic("implement me")
-}
-
+// CheckChanges scans the database for new or changed records, depending on the last modification time (stored on the client).
+// And duplicate data in RAM (excluding binary data).
 func (k *KeeperServiceClient) CheckChanges() error {
 
 	md := metadata.New(map[string]string{"usertoken": k.Auth.Token})
@@ -319,6 +380,53 @@ func (k *KeeperServiceClient) CheckChanges() error {
 				k.Auth.LastChangesTime = val.CreatedAt
 			}
 		}
+	}
+
+	in.RecordType = models.File
+
+	info, err := k.KeeperClient.CheckChanges(ctx, in)
+	if errors.Is(err, status.Error(codes.NotFound, "")) {
+	} else if err != nil {
+		k.Logger.Error(err)
+		return err
+	} else {
+		for _, val := range info.GetNote() {
+
+			k.Mutex.Lock()
+			k.Store.FileInfo[val.RecordID] = models.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				CreatedAt:   val.CreatedAt,
+			}
+			k.Mutex.Unlock()
+
+			last, err := time.Parse(models.DefaultLastChangesTime, k.Auth.LastChangesTime)
+			if err != nil {
+				k.Logger.Error(err)
+				return err
+			}
+			now, err := time.Parse(models.DefaultLastChangesTime, val.CreatedAt)
+			if err != nil {
+				k.Logger.Error(err)
+				return err
+			}
+			if now.After(last) {
+				k.Auth.LastChangesTime = val.CreatedAt
+			}
+		}
+	}
+
+	return nil
+}
+
+// Ping checks the database connection.
+func (k *KeeperServiceClient) Ping() error {
+	in := &empty.Empty{}
+	_, err := k.KeeperClient.Ping(context.Background(), in)
+	if err != nil {
+		return err
 	}
 	return nil
 }

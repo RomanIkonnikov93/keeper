@@ -7,6 +7,10 @@ import (
 	"github.com/RomanIkonnikov93/keeper/client/pkg/logging"
 )
 
+// Usage:
+// in directory: client/
+// go build ./cmd/keeper/main.go
+
 func main() {
 
 	logger := logging.GetLogger()

@@ -6,6 +6,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 )
 
+// sqlBuilderForCredentials generates an update request to the database depending on the conditions.
 func sqlBuilderForCredentials(in *pb.Record) (string, []interface{}, error) {
 
 	n := "now()"
@@ -35,6 +36,7 @@ func sqlBuilderForCredentials(in *pb.Record) (string, []interface{}, error) {
 	return sql, args, nil
 }
 
+// sqlBuilderForCard generates an update request to the database depending on the conditions.
 func sqlBuilderForCard(in *pb.Record) (string, []interface{}, error) {
 
 	n := "now()"
@@ -61,6 +63,7 @@ func sqlBuilderForCard(in *pb.Record) (string, []interface{}, error) {
 	return sql, args, nil
 }
 
+// sqlBuilderForFile generates an update request to the database depending on the conditions.
 func sqlBuilderForFile(in *pb.Record) (string, []interface{}, error) {
 
 	n := "now()"

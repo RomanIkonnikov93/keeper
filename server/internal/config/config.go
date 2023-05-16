@@ -1,4 +1,3 @@
-// Package config contains environment variables.
 package config
 
 import (

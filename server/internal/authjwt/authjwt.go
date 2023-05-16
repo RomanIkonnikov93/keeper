@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
+// EncodeJWT creates a new token including the user ID.
 func EncodeJWT(ID, key string) (string, error) {
 
 	var claims = jwt.RegisteredClaims{
@@ -24,6 +25,7 @@ func EncodeJWT(ID, key string) (string, error) {
 	return ss, nil
 }
 
+// UserTokenValidation checks the validity of the token and returns the user ID.
 func UserTokenValidation(ctx context.Context, key string) (string, error) {
 
 	md, ok := metadata.FromIncomingContext(ctx)

@@ -1,4 +1,3 @@
-// Package userrepository contains user ID storage options.
 package repository
 
 import (
@@ -15,16 +14,15 @@ import (
 // UsersRepository interface for user repository methods.
 type UsersRepository interface {
 	AddUser(ctx context.Context, id, login, password string) error
-	CheckUser(ctx context.Context, login, password string) (string, string, error)
+	GetUser(ctx context.Context, login, password string) (string, string, error)
 }
 
-// usersIDpg struct for postgresql connection.
-type usersIDpg struct {
+type UsersIDRepository struct {
 	pool *pgxpool.Pool
 }
 
 // NewPGIDRepository create new postgresql user repository.
-func NewPGIDRepository(pool *pgxpool.Pool) (*usersIDpg, error) {
+func NewPGIDRepository(pool *pgxpool.Pool) (*UsersIDRepository, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), models.TimeOut)
 	defer cancel()
@@ -45,13 +43,13 @@ func NewPGIDRepository(pool *pgxpool.Pool) (*usersIDpg, error) {
 		return nil, err
 	}
 
-	return &usersIDpg{
+	return &UsersIDRepository{
 		pool: pool,
 	}, nil
 }
 
-// AddUser
-func (p *usersIDpg) AddUser(ctx context.Context, ID, login, password string) error {
+// AddUser adds a new user and login details to the database.
+func (p *UsersIDRepository) AddUser(ctx context.Context, ID, login, password string) error {
 
 	c, cancel := context.WithTimeout(ctx, models.TimeOut)
 	defer cancel()
@@ -70,8 +68,8 @@ func (p *usersIDpg) AddUser(ctx context.Context, ID, login, password string) err
 	return nil
 }
 
-// CheckUser
-func (p *usersIDpg) CheckUser(ctx context.Context, login, password string) (string, string, error) {
+// GetUser gets user data from database.
+func (p *UsersIDRepository) GetUser(ctx context.Context, login, password string) (string, string, error) {
 
 	user, pass, ID := "", "", ""
 	err := p.pool.QueryRow(ctx, `select user_id, user_login, user_password from keeper_auth where user_login = $1`, login).

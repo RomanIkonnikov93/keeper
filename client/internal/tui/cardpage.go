@@ -5,12 +5,14 @@ import (
 	"strconv"
 
 	"github.com/RomanIkonnikov93/keeper/client/internal/models"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+// cardPage switches to card data page.
 func (t *TUI) cardPage(message string) {
 
 	switch t.client.Record.ActionType {
@@ -31,12 +33,10 @@ func (t *TUI) cardPage(message string) {
 				err := t.client.AddRecord()
 
 				if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
-					t.client.Logger.Error(err)
 					t.mainPage("InvalidArgument")
 					return
 				}
 				if err != nil {
-					t.client.Logger.Error(err)
 					t.mainPage("Unknown error")
 					return
 				}

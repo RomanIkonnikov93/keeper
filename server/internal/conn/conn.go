@@ -1,4 +1,3 @@
-// Package conn for database connection.
 package conn
 
 import (
@@ -11,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// NewConnection database connection.
+// NewConnection creates new database connection.
 func NewConnection(cfg config.Config) *pgxpool.Pool {
 
 	logger := logging.GetLogger()

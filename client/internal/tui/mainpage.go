@@ -7,6 +7,7 @@ import (
 	"github.com/rivo/tview"
 )
 
+// mainPage switches to ьфшт page, where it is possible to select the type of user record and all possible actions.
 func (t *TUI) mainPage(message string) {
 
 	form := tview.NewForm()
@@ -99,7 +100,7 @@ func (t *TUI) mainPage(message string) {
 
 		t.client.Record.ActionType = models.GetAll
 
-		t.outputAllPage("")
+		t.listPage("")
 
 	}).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Rune() == 113 {

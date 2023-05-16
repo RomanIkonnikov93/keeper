@@ -1,4 +1,3 @@
-// Package server contains server settings.
 package server
 
 import (
@@ -17,7 +16,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// StartServer starts the server.
+// StartServer starts the gRPC server.
 func StartServer(rep repository.Reps, cfg config.Config, logger *logging.Logger) error {
 
 	listen, err := net.Listen("tcp", cfg.GRPCPort)

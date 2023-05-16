@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// credentialsPage switches to credentials page.
 func (t *TUI) credentialsPage(message string) {
 
 	switch t.client.Record.ActionType {
@@ -34,12 +35,10 @@ func (t *TUI) credentialsPage(message string) {
 				err := t.client.AddRecord()
 
 				if errors.Is(err, status.Error(codes.InvalidArgument, "")) {
-					t.client.Logger.Error(err)
 					t.mainPage("InvalidArgument")
 					return
 				}
 				if err != nil {
-					t.client.Logger.Error(err)
 					t.mainPage("Unknown error")
 					return
 				}
