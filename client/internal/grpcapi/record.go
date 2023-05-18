@@ -1,4 +1,4 @@
-package gapi
+package grpcapi
 
 import pb "github.com/RomanIkonnikov93/keeper/client/internal/proto"
 

@@ -19,7 +19,7 @@ import (
 // StartServer starts the gRPC server.
 func StartServer(rep repository.Reps, cfg config.Config, logger *logging.Logger) error {
 
-	listen, err := net.Listen("tcp", cfg.GRPCPort)
+	listen, err := net.Listen("tcp", cfg.GRPCAddress)
 	if err != nil {
 		logger.Fatal("net.Listen: ", err)
 	}

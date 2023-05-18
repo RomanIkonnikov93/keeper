@@ -9,7 +9,7 @@ import (
 // Config for launching an application.
 type Config struct {
 	DSN          string `env:"KEEPER_DSN"`
-	GRPCPort     string `env:"GRPC_PORT" envDefault:":3200"`
+	GRPCAddress  string `env:"GRPC_PORT" envDefault:":3200"`
 	JWTSecretKey string `env:"JWT_SECRET_KEY"`
 	SecretKey    string `env:"KEEPER_SECRET_KEY"` // 32 byte
 }
@@ -21,7 +21,7 @@ func GetConfig() (*Config, error) {
 
 	// flags
 	flag.StringVar(&cfg.DSN, "d", cfg.DSN, "KEEPER_DSN")
-	flag.StringVar(&cfg.GRPCPort, "g", cfg.GRPCPort, "GRPC_PORT")
+	flag.StringVar(&cfg.GRPCAddress, "g", cfg.GRPCAddress, "GRPC_PORT")
 	flag.Parse()
 
 	err := env.Parse(cfg)

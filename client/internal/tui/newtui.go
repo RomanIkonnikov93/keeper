@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/RomanIkonnikov93/keeper/client/internal/gapi"
+	"github.com/RomanIkonnikov93/keeper/client/internal/grpcapi"
 	"github.com/RomanIkonnikov93/keeper/client/internal/models"
 
 	"github.com/rivo/tview"
@@ -16,11 +16,11 @@ import (
 type TUI struct {
 	*tview.Application
 	pages  *tview.Pages
-	client *gapi.KeeperServiceClient
+	client *grpcapi.KeeperServiceClient
 }
 
 // NewTUI gets new terminal user interface for client.
-func NewTUI(client *gapi.KeeperServiceClient) *TUI {
+func NewTUI(client *grpcapi.KeeperServiceClient) *TUI {
 
 	app := tview.NewApplication()
 	pages := tview.NewPages()

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/RomanIkonnikov93/keeper/client/internal/config"
-	"github.com/RomanIkonnikov93/keeper/client/internal/gapi"
+	"github.com/RomanIkonnikov93/keeper/client/internal/grpcapi"
 	"github.com/RomanIkonnikov93/keeper/client/internal/tui"
 	"github.com/RomanIkonnikov93/keeper/client/pkg/logging"
 )
@@ -20,7 +20,7 @@ func main() {
 		logger.Fatalf("GetConfig: %s", err)
 	}
 
-	client, err := gapi.InitServices(*cfg, logger)
+	client, err := grpcapi.InitServices(*cfg, logger)
 	if err != nil {
 		logger.Fatalf("GetConfig: %s", err)
 	}
