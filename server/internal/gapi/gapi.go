@@ -1,0 +1,452 @@
+package gapi
+
+import (
+	"context"
+	"errors"
+
+	"github.com/RomanIkonnikov93/keeper/server/internal/authjwt"
+	"github.com/RomanIkonnikov93/keeper/server/internal/cardvalid"
+	"github.com/RomanIkonnikov93/keeper/server/internal/config"
+	"github.com/RomanIkonnikov93/keeper/server/internal/crypt"
+	"github.com/RomanIkonnikov93/keeper/server/internal/models"
+	pb "github.com/RomanIkonnikov93/keeper/server/internal/proto"
+	"github.com/RomanIkonnikov93/keeper/server/internal/repository"
+	"github.com/RomanIkonnikov93/keeper/server/pkg/logging"
+
+	"github.com/segmentio/ksuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+)
+
+type KeeperServiceServer struct {
+	pb.UnimplementedKeeperServer
+	rep    repository.Repository
+	user   repository.UsersRepository
+	ping   repository.Pinger
+	cfg    config.Config
+	logger logging.Logger
+}
+
+func InitServices(rep repository.Reps, cfg config.Config, logger *logging.Logger) *KeeperServiceServer {
+
+	return &KeeperServiceServer{
+		rep:    rep.Rep,
+		user:   rep.UserRep,
+		ping:   rep.Ping,
+		cfg:    cfg,
+		logger: *logger,
+	}
+}
+
+// RegistrationUser registers a new user and assigns a unique ID to him.
+func (k *KeeperServiceServer) RegistrationUser(ctx context.Context, in *pb.Auth) (*pb.Auth, error) {
+
+	out := &pb.Auth{}
+
+	if in.UserLogin == "" || in.UserPassword == "" {
+		k.logger.Printf("%v", status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	newID := ksuid.New().String()
+
+	encrypted, err := crypt.Encrypt([]byte(in.UserPassword), []byte(k.cfg.SecretKey))
+	if err != nil {
+		k.logger.Error("")
+		return nil, err
+	}
+
+	err = k.user.AddUser(ctx, newID, in.UserLogin, encrypted)
+	if errors.Is(err, models.ErrConflict) {
+		k.logger.Error(models.ErrConflict)
+		return nil, status.Error(codes.AlreadyExists, "")
+	} else if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	token, err := authjwt.EncodeJWT(newID, k.cfg.JWTSecretKey)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	out.UserToken = token
+
+	return out, nil
+}
+
+// LoginUser authorizes and identifies users.
+func (k *KeeperServiceServer) LoginUser(ctx context.Context, in *pb.Auth) (*pb.Auth, error) {
+
+	out := &pb.Auth{}
+
+	if in.UserLogin == "" || in.UserPassword == "" {
+		k.logger.Printf("%v", status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	encryptedPass, ID, err := k.user.GetUser(ctx, in.UserLogin, in.UserPassword)
+	if errors.Is(err, models.ErrNotExist) {
+		k.logger.Error(models.ErrNotExist)
+		return nil, status.Error(codes.NotFound, "")
+	} else if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	valid, err := crypt.CheckPasswordDecrypt(in.UserPassword, encryptedPass, []byte(k.cfg.SecretKey))
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+	if !valid {
+		k.logger.Error(status.Error(codes.Unauthenticated, ""))
+		return nil, status.Error(codes.Unauthenticated, "")
+	}
+
+	token, err := authjwt.EncodeJWT(ID, k.cfg.JWTSecretKey)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	out.UserToken = token
+
+	return out, nil
+}
+
+// AddRecord adds a new record to the database.
+func (k *KeeperServiceServer) AddRecord(ctx context.Context, in *pb.Record) (*emptypb.Empty, error) {
+
+	out := &emptypb.Empty{}
+
+	ID, err := authjwt.UserTokenValidation(ctx, k.cfg.JWTSecretKey)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, status.Error(codes.Unauthenticated, "")
+	}
+
+	in.UserID = ID
+
+	switch in.RecordType {
+	case models.Credentials:
+
+		if in.Login == "" || in.Password == "" {
+			k.logger.Error(status.Error(codes.InvalidArgument, ""))
+			return nil, status.Error(codes.InvalidArgument, "")
+		}
+
+		encrypted, err := crypt.Encrypt([]byte(in.Password), []byte(k.cfg.SecretKey))
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		in.Password = encrypted
+
+	case models.Card:
+
+		valid, err := cardvalid.CheckCard(in.Card)
+		if !valid || err != nil {
+			k.logger.Error(status.Error(codes.InvalidArgument, ""))
+			return nil, status.Error(codes.InvalidArgument, "")
+		}
+
+		encrypted, err := crypt.Encrypt([]byte(in.Card), []byte(k.cfg.SecretKey))
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		in.Card = encrypted
+
+	case models.File:
+
+		if len(in.File) == 0 {
+			k.logger.Error(status.Error(codes.InvalidArgument, ""))
+			return nil, status.Error(codes.InvalidArgument, "")
+		}
+
+	default:
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	err = k.rep.Add(ctx, in)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	return out, nil
+}
+
+// GetRecordByID gets the record from the database.
+func (k *KeeperServiceServer) GetRecordByID(ctx context.Context, in *pb.Record) (*pb.Record, error) {
+
+	out := &pb.Record{}
+
+	ID, err := authjwt.UserTokenValidation(ctx, k.cfg.JWTSecretKey)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, status.Error(codes.Unauthenticated, "")
+	}
+
+	in.UserID = ID
+
+	if in.RecordID == 0 {
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	switch in.RecordType {
+	case models.Credentials:
+
+		out, err = k.rep.GetByID(ctx, in)
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		password, err := crypt.Decrypt(out.Password, []byte(k.cfg.SecretKey))
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		out.Password = string(password)
+
+	case models.Card:
+
+		out, err = k.rep.GetByID(ctx, in)
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		card, err := crypt.Decrypt(out.Card, []byte(k.cfg.SecretKey))
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+		out.Card = string(card)
+
+	case models.File:
+
+		out, err = k.rep.GetByID(ctx, in)
+		if err != nil {
+			k.logger.Error(err)
+			return nil, err
+		}
+
+	default:
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	return out, nil
+}
+
+// UpdateRecordByID updates the record in the database.
+func (k *KeeperServiceServer) UpdateRecordByID(ctx context.Context, in *pb.Record) (*emptypb.Empty, error) {
+
+	out := &emptypb.Empty{}
+
+	ID, err := authjwt.UserTokenValidation(ctx, k.cfg.JWTSecretKey)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, status.Error(codes.Unauthenticated, "")
+	}
+
+	in.UserID = ID
+
+	if in.RecordID == 0 {
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	switch in.RecordType {
+	case models.Credentials:
+
+		if in.Password != "" {
+			encrypted, err := crypt.Encrypt([]byte(in.Password), []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
+
+			in.Password = encrypted
+		}
+
+	case models.Card:
+
+		if in.Card != "" {
+			valid, err := cardvalid.CheckCard(in.Card)
+			if !valid || err != nil {
+				k.logger.Error(status.Error(codes.InvalidArgument, ""))
+				return nil, status.Error(codes.InvalidArgument, "")
+			}
+
+			encrypted, err := crypt.Encrypt([]byte(in.Card), []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
+
+			in.Card = encrypted
+		}
+	case models.File:
+
+	default:
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	err = k.rep.UpdateByID(ctx, in)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	return out, nil
+}
+
+// DeleteRecordByID changes the status of a record in the database to: deleted.
+func (k *KeeperServiceServer) DeleteRecordByID(ctx context.Context, in *pb.Record) (*emptypb.Empty, error) {
+
+	out := &emptypb.Empty{}
+
+	ID, err := authjwt.UserTokenValidation(ctx, k.cfg.JWTSecretKey)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, status.Error(codes.Unauthenticated, "")
+	}
+
+	in.UserID = ID
+
+	if in.RecordID == 0 {
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	switch in.RecordType {
+	case models.Credentials:
+	case models.Card:
+	case models.File:
+	default:
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	err = k.rep.DeleteByID(ctx, in)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	return out, nil
+}
+
+// CheckChanges scans the database for new or changed records, depending on the last modification time (stored on the client).
+func (k *KeeperServiceServer) CheckChanges(ctx context.Context, in *pb.Record) (*pb.List, error) {
+
+	out := &pb.List{}
+
+	ID, err := authjwt.UserTokenValidation(ctx, k.cfg.JWTSecretKey)
+	if err != nil {
+		k.logger.Error(err)
+		return nil, status.Error(codes.Unauthenticated, "")
+	}
+
+	in.UserID = ID
+
+	switch in.RecordType {
+	case models.Credentials:
+	case models.Card:
+	case models.File:
+	default:
+		k.logger.Error(status.Error(codes.InvalidArgument, ""))
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	data, err := k.rep.Check(ctx, in)
+	if errors.Is(err, models.ErrNotExist) {
+		k.logger.Error(err)
+		return nil, status.Error(codes.NotFound, "")
+	}
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+
+	for _, val := range data {
+		switch val.RecordType {
+		case models.Credentials:
+
+			password, err := crypt.Decrypt(val.Password, []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
+
+			out.Note = append(out.Note, &pb.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				Login:       val.Login,
+				Password:    string(password),
+				CreatedAt:   val.CreatedAt,
+			})
+
+		case models.Card:
+
+			card, err := crypt.Decrypt(val.Card, []byte(k.cfg.SecretKey))
+			if err != nil {
+				k.logger.Error(err)
+				return nil, err
+			}
+
+			out.Note = append(out.Note, &pb.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				Card:        string(card),
+				CreatedAt:   val.CreatedAt,
+			})
+
+		case models.File:
+
+			out.Note = append(out.Note, &pb.Record{
+				RecordID:    val.RecordID,
+				RecordType:  val.RecordType,
+				Description: val.Description,
+				Metadata:    val.Metadata,
+				CreatedAt:   val.CreatedAt,
+			})
+
+		default:
+			k.logger.Error(status.Error(codes.InvalidArgument, ""))
+			return nil, status.Error(codes.InvalidArgument, "")
+		}
+	}
+
+	return out, nil
+}
+
+// Ping checks the database connection.
+func (k *KeeperServiceServer) Ping(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+
+	out := &emptypb.Empty{}
+
+	err := k.ping.PingDB()
+	if err != nil {
+		k.logger.Error(err)
+		return nil, err
+	}
+	return out, nil
+}

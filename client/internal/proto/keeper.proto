@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package keeper;
+
+option go_package = "github.com/RomanIkonnikov93/keeper";
+
+import "google/protobuf/empty.proto";
+
+service Keeper {
+  rpc RegistrationUser(Auth) returns (Auth);
+    rpc LoginUser(Auth) returns (Auth);
+
+      rpc AddRecord(Record) returns (google.protobuf.Empty);
+        rpc GetRecordByID(Record) returns (Record);
+            rpc UpdateRecordByID(Record) returns (google.protobuf.Empty);
+              rpc DeleteRecordByID(Record) returns (google.protobuf.Empty);
+
+                rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+                  rpc CheckChanges(Record) returns (List);
+
+
+}
+
+message Auth {
+  string user_login = 1;
+  string user_password = 2;
+  string user_id = 3;
+  string user_token = 4;
+}
+
+message Record {
+  int32 record_id = 1;
+  string record_type = 2;
+  string user_id = 3;
+  string description = 4;
+  string metadata = 5;
+  string login = 6;
+  string password = 7;
+  string card = 8;
+  bytes file = 9;
+  string created_at = 10;
+}
+
+message List {
+  repeated Record note = 1;
+}
+
+
+
+
+
+
+
+

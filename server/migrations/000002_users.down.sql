@@ -1,0 +1,1 @@
+drop table keeper_auth;
