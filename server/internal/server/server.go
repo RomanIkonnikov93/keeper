@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	"github.com/RomanIkonnikov93/keeper/server/internal/config"
-	"github.com/RomanIkonnikov93/keeper/server/internal/gapi"
+	"github.com/RomanIkonnikov93/keeper/server/internal/grpcapi"
 	pb "github.com/RomanIkonnikov93/keeper/server/internal/proto"
 	"github.com/RomanIkonnikov93/keeper/server/internal/repository"
 	"github.com/RomanIkonnikov93/keeper/server/pkg/logging"
@@ -25,7 +25,7 @@ func StartServer(rep repository.Reps, cfg config.Config, logger *logging.Logger)
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterKeeperServer(s, gapi.InitServices(rep, cfg, logger))
+	pb.RegisterKeeperServer(s, grpcapi.InitServices(rep, cfg, logger))
 
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
